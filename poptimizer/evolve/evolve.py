@@ -194,8 +194,9 @@ class Evolution:  # noqa: WPS214
                 dates = all_dates[-self._tests :].tolist()
                 organism.retrain(self._tickers, dates[0])
         except (ModelError, AttributeError) as error:
+            self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 09 Удаляю - {error}\n")
             organism.die()
-            self._logger.error(f"Удаляю - {error}\n")
+#            self._logger.error(f"Удаляю - {error}\n")
 
             return None
 
@@ -244,6 +245,7 @@ class Evolution:  # noqa: WPS214
             )
 
             if upper < 0:
+                self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 08 Удаляю - {error}\n")
                 org.die()
                 self._logger.info("Исключен из популяции...\n")
 
