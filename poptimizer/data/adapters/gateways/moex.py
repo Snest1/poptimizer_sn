@@ -181,6 +181,74 @@ class QuotesGateway(gateways.BaseGateway):
 
 
 
+
+#SNEDIT_ADD
+
+# Надо из моих тикеров удалить данные за даты бОльшие, чем есть информация с моекс. например по газпрому.
+#        if (ticker == 'GAZP'):
+        if (ticker == 'YNDX'):   # Надо позднее начинать, чтобы дата начальных тикетов успела сохраниться
+
+### Создадим признак, что курсы были загружены  2023
+
+            from pymongo.collection import Collection
+            from poptimizer.store.database import DB, MONGO_CLIENT
+            misc_collection = MONGO_CLIENT[DB]['misc']
+
+            import datetime
+            post = {"_id": "need_update_TV",
+              "data": datetime.datetime.utcnow(),
+              "timestamp": datetime.datetime.utcnow()}
+
+            misc_collection.replace_one(filter={"_id": "need_update_TV"}, replacement=post, upsert=True)
+
+#    collection_speedy.delete_one({'_id': speedy_id.inserted_id})
+
+##################################################
+
+
+
+##            gazp = _format_candles_df(json)
+#
+##  загрузим список тикеров и дат, т.к. другие библиотеки poptimizer не работают
+#            from pymongo import MongoClient
+#            quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
+#            sn_tickers = []   # список
+#            sn_dates = []   # список
+#            for quote in quotes_collection.find():
+#                sn_tickers.append(quote['_id'])
+#                for one_date in quote['data']['index']:
+#                    if one_date not in sn_dates:
+#                        sn_dates.append(one_date)
+#            sn_dates.sort()
+#            print(sn_dates)
+#
+#
+#            LoadFromTV('GLDRUB_TOM', "MOEX:GLDRUB_TOM", 1, sn_dates)
+#            LoadFromTV('SLVRUB_TOM', "MOEX:SLVRUB_TOM", 1, sn_dates)
+#            LoadFromTV('BTCRUB', "BINANCE:BTCRUB/10000", 10000, sn_dates)
+#            LoadFromTV('ETHRUB', "BINANCE:ETHRUB/100", 100, sn_dates)
+##            quit()
+#
+#
+#
+##        if (ticker == 'FXGD'):
+##
+##            import datetime
+##            bars = datetime.datetime.strptime(last_date, "%Y-%m-%d").date() - datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+##
+##
+##            self._logger(f"SNLOG_02. FXGD Here. start={start_date}; end={last_date}; bars={bars.days}")
+##            self._logger(f"SNLOG_02. JSON={json}")
+##            temp_df = _format_candles_df(json)
+##            self._logger(f"SNLOG_02. DF={temp_df}")
+##
+##            from tvDatafeed import TvDatafeed,Interval
+##            tv = TvDatafeed()
+##            tv.clear_cache()
+##            t_FXGD = tv.get_hist("MOEX:FXGD", interval=Interval.in_daily,n_bars=bars.days)
+##            self._logger(f"SNLOG_03. TV={t_FXGD}")
+
+
         return _format_candles_df(json)
 
 

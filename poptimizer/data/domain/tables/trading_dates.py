@@ -35,10 +35,8 @@ def _trading_day_potential_end() -> datetime:
         second=0,
         microsecond=0,
     )
-
     if end_of_trading > now:
         end_of_trading -= timedelta(days=1)
-
     return _to_utc_naive(end_of_trading)
 
 

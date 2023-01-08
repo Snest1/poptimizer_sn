@@ -53,23 +53,3 @@ now=$(date "+%Y%m%d %H%M%S")
 echo "BATCH 'optimize eternal briefcase by resample_sn' $v_date_YYYYMMDD_HHmm ended at $now"
 
 sleep 30
-
-
-
-
-
-
-
-
-
-
-#PKG_MNG=brew
-#PYTHON_VER=python@3.10
-#TOOLS=${PYTHON_VER} poetry mongodb-community mongodb-database-tools
-#SRC=poptimizer
-#VENV_NAME=.venv
-#VENV_ACTIVATE=. ${VENV_NAME}/bin/activate
-#PYTHON=./../.venv/bin/python3
-
-#$(VENV_ACTIVATE)
-#$(PYTHON) -m $(SRC) evolve

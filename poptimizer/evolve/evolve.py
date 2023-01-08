@@ -170,7 +170,7 @@ class Evolution:  # noqa: WPS214
         try:
             self._logger.info(f"{organism}\n")
         except AttributeError as err:
-            self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 04 Удаляю - {err}\n")
+            self._logger.error(f"!!!_  Organizm:{organism.id}  Проблема: 04 Удаляю - {err}\n")
             organism.die()
 #            self._logger.error(f"Удаляю - {err}\n")
 
@@ -197,7 +197,7 @@ class Evolution:  # noqa: WPS214
                 sn_len = len(dates)
                 organism.retrain(self._tickers, dates[0], sn_comments = f"{organism.id}\t{dates[0]}")
         except (ModelError, AttributeError) as error:
-            self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 09 Удаляю - {error}\n")
+            self._logger.error(f"!!!_ Organizm:{organism.id}  Проблема: 09 Удаляю - {error}\n")
             organism.die()
 #            self._logger.error(f"Удаляю - {error}\n")
 
@@ -212,7 +212,7 @@ class Evolution:  # noqa: WPS214
             try:
                 organism.evaluate_fitness(self._tickers, date, sn_comments = f"{organism.id}\t{date}")
             except (ModelError, AttributeError) as error:
-                self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 03 Удаляю - {error}\n")
+                self._logger.error(f"!!!_ Organizm:{organism.id}  Проблема: 03 Удаляю - {error}\n")
                 organism.die()
 #                self._logger.error(f"Удаляю - {error}\n")
 
