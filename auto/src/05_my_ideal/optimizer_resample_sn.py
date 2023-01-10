@@ -460,6 +460,12 @@ oper\t\
 ##                top_prior2 = 0
 
                 while rec.SIGNAL[cnt] == 'BUY':
+                    if rec.PRIORITY_2[cnt].round(5) == 0:
+                        self._logger.info(f'Nothing to buy-2. Cash = {cur_cash:.2f}  Cur_daily_limit = {cur_daily_limit:.2f}')
+                        self._logger.info(cur_prot)
+                        self._logger.info(self._metrics)
+                        quit()	## nothing to buy
+
 #                    self._logger.info(f'tst1 {rec.index[cnt]} {rec.SIGNAL[cnt]}')
                     if rec.SIGNAL[cnt] == 'BUY' and rec.index[cnt] not in skip_buying:
 #                        self._logger.info(f'tst2 {rec.index[cnt]} {rec.SIGNAL[cnt]}')
@@ -925,7 +931,7 @@ oper\t\
         небольшие, но быстро нарастают с объемом. Расчет для условной сделки в размере кэша сразу
         отсекает совсем неликвидных кандидатов на покупку.
         """
-        return 0  #sn_added 202301
+#        return 0  #sn_added 202301
 
 
         port = self._portfolio
