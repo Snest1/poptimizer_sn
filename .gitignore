@@ -124,3 +124,4 @@ ENV/
 stat_*
 *_out
 /auto/port_link*
+/auto/work*
