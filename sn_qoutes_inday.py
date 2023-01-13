@@ -299,7 +299,7 @@ sn_dates = []   # список
 for quote in quotes_collection.find():
     for day_quote in quote['data']['index']:
         if quote['_id'] != 'GAZP':
-            if day_quote == datetime.datetime(2022, 3, 9, 0, 0):
+            if day_quote == datetime.datetime(2022, 1, 7, 0, 0):
                 print(quote['_id'], day_quote)
 #		       print(quote['_id'], (quote['data']['index'][-1] - quote['data']['index'][0]).days)
             else:

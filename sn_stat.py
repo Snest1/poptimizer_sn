@@ -486,12 +486,13 @@ quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
 #sn_tickers_date = []   # список
 
 sn_gazp_dates = []   # список
+sn_gazp2_dates = []   # список
 sn_btcrub_dates = []   # список
 sn_ethrub_dates = []   # список
 sn_gldrub_tom_dates = []   # список
 sn_slvrub_tom_dates = []   # список
-begdate = datetime.datetime(2022, 11, 1, 0, 0)
-#begdate = datetime.datetime(2021, 1, 1, 0, 0)
+#begdate = datetime.datetime(2022, 11, 1, 0, 0)
+begdate = datetime.datetime(2020, 10, 13, 0, 0)
 
 for quote in quotes_collection.find():
     for one_date in quote['data']['index']:
@@ -514,9 +515,13 @@ sn_RVI_dates = []   # список
 sn_IMOEX_dates = []   # список
 sn_MCFTRR_dates = []   # список
 
+begdate = datetime.datetime(2022, 11, 1, 0, 0)
+
 indexes_collection = MongoClient('localhost', 27017)['data']['indexes']
 for quote in indexes_collection.find():
     for one_date in quote['data']['index']:
+        if quote['_id'] == 'GAZP' and one_date >= begdate:
+            sn_gazp2_dates.append(one_date)
         if quote['_id'] == 'MEOGTRR' and one_date >= begdate:
             sn_MEOGTRR_dates.append(one_date)
         if quote['_id'] == 'RVI' and one_date >= begdate:
@@ -545,10 +550,10 @@ print(f"GAZP есть, а ethrub нет: {lishka}")     if not isListEmpty(lishk
 print(f"GAZP есть, а gldrub_tom нет: {lishka}") if not isListEmpty(lishka := intersection_list_1(  sn_gldrub_tom_dates, sn_gazp_dates   )) else ""
 print(f"GAZP есть, а slvrub_tom нет: {lishka}") if not isListEmpty(lishka := intersection_list_1(  sn_slvrub_tom_dates, sn_gazp_dates   )) else ""
 
-print(f"GAZP есть, а MEOGTRR нет: {lishka}") if not isListEmpty(lishka := intersection_list_1(  sn_MEOGTRR_dates, sn_gazp_dates   )) else ""
-print(f"GAZP есть, а RVI нет: {lishka}")     if not isListEmpty(lishka := intersection_list_1(  sn_RVI_dates,     sn_gazp_dates   )) else ""
-print(f"GAZP есть, а IMOEX нет: {lishka}")   if not isListEmpty(lishka := intersection_list_1(  sn_IMOEX_dates,   sn_gazp_dates   )) else ""
-print(f"GAZP есть, а MCFTRR нет: {lishka}")  if not isListEmpty(lishka := intersection_list_1(  sn_MCFTRR_dates,  sn_gazp_dates   )) else ""
+print(f"GAZP есть, а MEOGTRR нет: {lishka}") if not isListEmpty(lishka := intersection_list_1(  sn_MEOGTRR_dates, sn_gazp2_dates   )) else ""
+print(f"GAZP есть, а RVI нет: {lishka}")     if not isListEmpty(lishka := intersection_list_1(  sn_RVI_dates,     sn_gazp2_dates   )) else ""
+print(f"GAZP есть, а IMOEX нет: {lishka}")   if not isListEmpty(lishka := intersection_list_1(  sn_IMOEX_dates,   sn_gazp2_dates   )) else ""
+print(f"GAZP есть, а MCFTRR нет: {lishka}")  if not isListEmpty(lishka := intersection_list_1(  sn_MCFTRR_dates,  sn_gazp2_dates   )) else ""
 
 
 ## Конец проверки курсов
