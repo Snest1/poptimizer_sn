@@ -21,41 +21,27 @@ from poptimizer import config
 from poptimizer.dl import ModelError
 from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
-
+from poptimizer.evolve import store
+import logging
+from pymongo.collection import Collection
+from poptimizer.store.database import DB, MONGO_CLIENT
+from poptimizer.data.views import quotes
+import pandas as pd
 
 population.print_stat()
 
-from poptimizer.evolve import store
-import logging
 LOGGER = logging.getLogger()
 
-
-
-
-
-
-from pymongo.collection import Collection
-from poptimizer.store.database import DB, MONGO_CLIENT
 _COLLECTION = MONGO_CLIENT[DB]["sn_speedy"]
 def snspeedy_get_collection() -> Collection:
     return _COLLECTION
 
-
-from poptimizer.data.views import quotes
-import pandas as pd
-def all_history_date(
-    tickers: tuple[str, ...],
-    *,
-    start: Optional[pd.Timestamp] = None,
-    end: Optional[pd.Timestamp] = None
-) -> pd.Index:
+def all_history_date(tickers: tuple[str, ...], *, start: Optional[pd.Timestamp] = None, end: Optional[pd.Timestamp] = None) -> pd.Index:
     """Перечень дат для которых есть котировки после проверки на наличие новых данных.
 
     Может быть ограничен сверху или снизу.
     """
     return quotes.all_prices(tickers).loc[start:end].index
-
-
 
 def sn_get_keys(key_1: str, key_2: str = None, key_3: str = None) ->list:
     local_list = []
@@ -77,7 +63,6 @@ def sn_get_keys(key_1: str, key_2: str = None, key_3: str = None) ->list:
 #       print(id, "\t", keys[1])
     return local_list
 
-
 def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, float]:
     """Выбирает минимальное значение верхней границы доверительного интервала.
 
@@ -95,7 +80,6 @@ def _select_worst_bound(candidate: dict, metric: str) -> tuple[float, float, flo
         bounds,
         key=lambda bound: bound[1] or np.inf,
     )
-
 
 def _aligned_diff(candidate: dict, metric: str) -> list[float]:
     comp = []
@@ -117,7 +101,6 @@ def _aligned_diff(candidate: dict, metric: str) -> list[float]:
 
     return list(map(operator.sub, candidate[metric], comp))
 
-
 def _test_diff(diff: list[float]) -> tuple[float, float, float]:
     """Последовательный тест на медианную разницу с учетом множественного тестирования.
 
@@ -130,13 +113,11 @@ def _test_diff(diff: list[float]) -> tuple[float, float, float]:
 def sn_scale() -> float:
     return population.count() ** 0.5
 
-
 def sn_time_delta(org):
     """Штраф за время, если организм медленнее медианного в популяции."""
     times = [doc["timer"] for doc in population.get_metrics()]
 
     return stats.percentileofscore(times, org.timer, kind="mean") / 100
-
 
 def sn_get_margin(org: population.Organism) -> tuple[float, float]:
     """Используется тестирование разницы llh и ret против самого старого организма.
@@ -182,16 +163,12 @@ def sn_get_margin(org: population.Organism) -> tuple[float, float]:
 
     return margin, time_score
 
-
-
 def sn_tests() -> float:
     count = population.count()
     bound = seq.minimum_bounding_n(config.P_VALUE / count)
     max_score = population.max_scores() or bound
 
     return max(1, bound + (count - max_score))
-
-
 
 def sn_step(hunter: population.Organism) -> Optional[population.Organism]:
     """Один шаг эволюции."""
@@ -228,7 +205,6 @@ def sn_step(hunter: population.Organism) -> Optional[population.Organism]:
 #        if (rnd := np.random.random()) < (slowness := margin[1]):
 #            print(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
 #            return None
-
 
 def sn_eval_organism(organism: population.Organism) -> Optional[tuple[float, float]]:
     """Оценка организмов.
@@ -275,10 +251,6 @@ def sn_eval_organism(organism: population.Organism) -> Optional[tuple[float, flo
             print(f"Удаляю - {error}\n")
 
             return None
-
-    return sn_get_margin(organism)
-#    return None
-
 
 def sn_get_attr_from_list(objid: population.Organism.id, attrlist: list, s_type: str = '') -> Optional[any]:
     for attr in attrlist:
@@ -480,7 +452,7 @@ def sn_xo(var1):
 
 
 from pymongo import MongoClient
-quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
+quotes_collection: object = MongoClient('localhost', 27017)['data']['quotes']
 #sn_tickers = []   # список
 #sn_dates = []   # список
 #sn_tickers_date = []   # список
@@ -604,29 +576,79 @@ p_timer_delta = []
 
 for org in population.get_all():
 #    print(sn_get_attr_from_list(org.id, p_history_days))
+#     upper_bound = 1
+# #LLH
+#     margin = np.inf
+#     LLH_median = LLH_upper = LLH_maximum = 0
+#
+#     try:
+#         LLH_median, LLH_upper, LLH_maximum = _select_worst_bound(candidate={"date": org.date, "llh": org.llh, "ir": org.ir}, metric="llh")
+#     except:
+#         continue
+#
+# #    upper *= max(0, upper)
+#     upper_bound *= max(0, LLH_upper)
+#
+#     valid = LLH_upper != LLH_median
+#     margin = min(margin, valid and (LLH_upper / (LLH_upper - LLH_median)))
+#     LLH_margin = margin
+#
+#
+# #RET
+#     RET_median, RET_upper, RET_maximum = _select_worst_bound(candidate={"date": org.date, "llh": org.llh, "ir": org.ir}, metric="ir")
+#     upper_bound *= max(0, upper_bound, RET_upper)
+#     valid = RET_upper != RET_median
+#     margin = min(margin, valid and (RET_upper / (RET_upper - RET_median)))
+#     RET_margin = valid and (RET_upper / (RET_upper - RET_median))
+#
+#     if margin == np.inf:
+#         margin = 0
 
+###
     margin = np.inf
+
+    names = {"llh": "LLH", "ir": "RET"}
+
+    upper_bound = 1
     LLH_median = LLH_upper = LLH_maximum = 0
+    RET_median = RET_upper = RET_maximum = 0
 
-    try:
-        LLH_median, LLH_upper, LLH_maximum = _select_worst_bound(candidate={"date": org.date, "llh": org.llh, "ir": org.ir}, metric="llh")
-    except:
-        continue
+    for metric in ("llh", "ir"):
+        try:
+            median, upper, maximum = _select_worst_bound(
+                candidate={"date": org.date, "llh": org.llh, "ir": org.ir},
+                metric=metric,
+            )
+        except:
+            continue
 
+        upper_bound *= max(0, upper)
 
-    valid = LLH_upper != LLH_median
-    margin = min(margin, valid and (LLH_upper / (LLH_upper - LLH_median)))
-    LLH_margin = margin
+        if metric == 'llh':
+            LLH_median = median
+            LLH_upper = upper
+            LLH_maximum = maximum
+        if metric == 'ir':
+            RET_median = median
+            RET_upper = upper
+            RET_maximum = maximum
 
-    RET_median, RET_upper, RET_maximum = _select_worst_bound(candidate={"date": org.date, "llh": org.llh, "ir": org.ir}, metric="ir")
-    valid = RET_upper != RET_median
-    margin = min(margin, valid and (RET_upper / (RET_upper - RET_median)))
-    RET_margin = valid and (RET_upper / (RET_upper - RET_median))
+        valid = upper != median
+        margin = min(margin, valid and (upper / (upper - median)))
+
+        if metric == 'llh':
+            LLH_margin = valid and (upper / (upper - median))
+        if metric == 'ir':
+            RET_margin = valid and (upper / (upper - median))
+
+    upper_bound = upper_bound ** 0.5
 
     if margin == np.inf:
         margin = 0
+###
 
-    p_metrics.append([org.id, (margin, RET_margin, RET_median, RET_upper, RET_maximum, LLH_margin, LLH_median, LLH_upper, LLH_maximum)])
+
+    p_metrics.append([org.id, (margin, RET_margin, RET_median, RET_upper, RET_maximum, LLH_margin, LLH_median, LLH_upper, LLH_maximum, upper_bound)])
 #    print(org.id, margin, RET_margin, RET_median, RET_upper, RET_maximum, LLH_margin, LLH_median, LLH_upper, LLH_maximum)   #0.4f
 
     p_timer_delta.append([org.id, (sn_time_delta(org))])
@@ -687,6 +709,7 @@ print(
             f"Days",
             f"tckr",
             f"margin",
+            f"up_bnd",
             f"RET_mar",
             f"RET_med",
             f"RET_upp",
@@ -824,6 +847,7 @@ for org in population.get_all():
 #                f"{p_metrics[i][1][7]:.2f}",
 #                f"{p_metrics[i][1][8]:.2f}",
                 f"{sn_get_attr_from_list(org.id, p_metrics)[0]:.2f}",		# margin
+                f"{sn_get_attr_from_list(org.id, p_metrics)[9]:.5f}",		# upper_bound
                 f"{sn_get_attr_from_list(org.id, p_metrics)[1]:.2f}",
                 f"{sn_get_attr_from_list(org.id, p_metrics)[2]:.2f}",
                 f"{sn_get_attr_from_list(org.id, p_metrics)[3]:.2f}",
@@ -885,6 +909,7 @@ for org in population.get_all():
                 f"",
                 f"",
                 f"",
+                f"",
 
                 f"",
                 f"",
@@ -932,6 +957,7 @@ for org in population.get_all():
                 f"",
                 f"",
                 f"allLLHs",
+                f"",
                 f"",
                 f"",
                 f"",
