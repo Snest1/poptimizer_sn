@@ -32,7 +32,7 @@ def LoadFromTV(ticker: str, TVformula: str, mult: int, sn_dates: list):
         tv = TvDatafeed()
         tv.clear_cache()
 #        t_GLDRUB = tv.get_hist("MOEX:GLDRUB_TOM", interval=Interval.in_daily,n_bars=bars.days)
-        t_GLDRUB = tv.get_hist(TVformula, interval=Interval.in_daily,n_bars=10000)
+        t_GLDRUB = tv.get_hist(TVformula, interval=Interval.in_daily,n_bars=100000)
 #        self._logger(f"SNLOG_09. TV={t_GLDRUB}")
 
         sn_df_quotes[col.OPEN] = t_GLDRUB['open']
@@ -146,7 +146,7 @@ class Evolution:  # noqa: WPS214
         if not hunter.scores:
             label = " - новый организм"
 
-        self._logger.info(f"Родитель{label}:")
+        self._logger.info(f"Родитель{label} (ID={hunter.id}):")
         if self._eval_organism(hunter) is None:
             return None
 
@@ -156,7 +156,7 @@ class Evolution:  # noqa: WPS214
             return None
 
         for n_child in itertools.count(1):
-            self._logger.info(f"Потомок {n_child}:")
+            self._logger.info(f"Потомок {n_child} (Scale={self._scale:.2f}):")
 
             hunter = hunter.make_child(1 / self._scale)
             if (margin := self._eval_organism(hunter)) is None:
@@ -287,10 +287,11 @@ def _check_time_range(self) -> bool:
         sn_tickers = []   # список
         sn_dates = []   # список
         for quote in quotes_collection.find():
-            sn_tickers.append(quote['_id'])
-            for one_date in quote['data']['index']:
-                if one_date not in sn_dates:
-                    sn_dates.append(one_date)
+            if quote['_id'] == 'GAZP':
+                sn_tickers.append(quote['_id'])
+                for one_date in quote['data']['index']:
+                    if one_date not in sn_dates:
+                        sn_dates.append(one_date)
         sn_dates.sort()
         print(sn_dates)
 
