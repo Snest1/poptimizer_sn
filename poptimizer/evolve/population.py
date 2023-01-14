@@ -375,3 +375,9 @@ def min_scores() -> int:
         min_wins = min_wins["wins"]
 
     return min_wins
+
+def sn_get_org_by_id(str_org: str) -> Organism:
+   for org in get_all():
+       if str(org.id) == str_org:
+           return org
+

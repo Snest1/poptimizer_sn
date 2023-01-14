@@ -846,16 +846,16 @@ for org in population.get_all():
 #                f"{p_metrics[i][1][6]:.2f}",
 #                f"{p_metrics[i][1][7]:.2f}",
 #                f"{p_metrics[i][1][8]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[0]:.2f}",		# margin
+                f"{sn_get_attr_from_list(org.id, p_metrics)[0]:.4f}",		# margin
                 f"{sn_get_attr_from_list(org.id, p_metrics)[9]:.5f}",		# upper_bound
-                f"{sn_get_attr_from_list(org.id, p_metrics)[1]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[2]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[3]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[4]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[5]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[6]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[7]:.2f}",
-                f"{sn_get_attr_from_list(org.id, p_metrics)[8]:.2f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[1]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[2]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[3]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[4]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[5]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[6]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[7]:.4f}",
+                f"{sn_get_attr_from_list(org.id, p_metrics)[8]:.4f}",
 
 
 

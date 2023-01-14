@@ -101,7 +101,7 @@ class Optimizer:  # noqa: WPS214
 'FIVE': 1004,
 'GLTR': 1005,
 'BTCRUB': 1006,
-'ETCRUB': 1007,
+'ETHRUB': 1007,
 
 'SNGSP': 1030,
 'LSNGP': 1080,
