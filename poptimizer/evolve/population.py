@@ -54,7 +54,7 @@ class Organism:  # noqa: WPS214
         blocks = [
             f"LLH — {llh_block}",
             f"RET — {ir_block}",
-            f"Timer — {timer} / Scores - {self.scores}",
+            f"Timer — {timer} / Scores - {self.scores} / upper_bound: {self.upper_bound:.7f}",
             str(self._doc.genotype),
         ]
 
