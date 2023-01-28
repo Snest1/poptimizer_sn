@@ -20,7 +20,7 @@ class _UtcMicrosecondsFormatter(Formatter):
         )
 
     def formatTime(self, record: LogRecord, datefmt: Optional[str] = None) -> str:  # noqa: N802
-        ct = datetime.datetime.utcfromtimestamp(record.created)
+        ct = datetime.datetime.utcfromtimestamp(record.created) + datetime.timedelta(hours=3)
         if datefmt:
             return ct.strftime(datefmt)
 
