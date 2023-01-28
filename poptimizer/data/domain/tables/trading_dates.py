@@ -20,9 +20,6 @@ _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
 _END_HOUR: Final = 4    # Но мои валюты на трейдингвью закрываются скорее всего около 3.00  На всякий случай +1 час на зимнее время
 _END_MINUTE: Final = 5
 
-_skip_days: Final = 1
-
-
 def _to_utc_naive(date: datetime) -> datetime:
     """Переводит дату в UTC и делает ее наивной."""
     date = date.astimezone(timezone.utc)
@@ -32,20 +29,15 @@ def _to_utc_naive(date: datetime) -> datetime:
 def _trading_day_potential_end() -> datetime:
     """Возможный конец последнего торгового дня UTC."""
     now = datetime.now(_MOEX_TZ)
-    print(f"now1={now}")
     end_of_trading = now.replace(
         hour=_END_HOUR,
         minute=_END_MINUTE,
         second=0,
         microsecond=0,
     )
-    print(f"end_of_trading1={end_of_trading}")
 
     if end_of_trading > now:
         end_of_trading -= timedelta(days=1)
-        print(f"end_of_trading2={end_of_trading}")
-    end_of_trading -= timedelta(days=_skip_days)
-    print(f"end_of_trading3={end_of_trading}")
 
     return _to_utc_naive(end_of_trading)
 
@@ -72,10 +64,17 @@ class TradingDates(base.AbstractTable[events.DateCheckRequired]):
 
     def _update_cond(self, event: events.DateCheckRequired) -> bool:
         """Обновляет, если последняя дата обновления после потенциального окончания торгового дня."""
-        if self._timestamp is None:
+        if self._timestamp is None:    # Если запись с торговыми днями была удалена, то точно нужно обновление курсов
             return True
+        retval = _trading_day_potential_end() > self._timestamp  # snedit  StopUpdate
 
-        return _trading_day_potential_end() > self._timestamp
+# SNEDIT  отключение импорта новых котировок
+        try:
+            f = open("/home/sn/sn/poptimizer-master/auto/!work/!moex_stop",'r')
+            f.close()
+            return False
+        except:
+            return _trading_day_potential_end() > self._timestamp
 
     async def _prepare_df(self, event: events.DateCheckRequired) -> pd.DataFrame:
         """Загружает новый DataFrame."""
