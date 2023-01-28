@@ -28,7 +28,7 @@ def LoadFromTV(ticker: str, TVformula: str, mult: int, sn_dates: list):
 #        bars = 10
 #        datetime.datetime.strptime(last_date, "%Y-%m-%d").date() - datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
 
-        from tvDatafeed import TvDatafeed,Interval
+        from poptimizer.tvDatafeed import TvDatafeed,Interval
         tv = TvDatafeed()
         tv.clear_cache()
 #        t_GLDRUB = tv.get_hist("MOEX:GLDRUB_TOM", interval=Interval.in_daily,n_bars=bars.days)
@@ -277,7 +277,6 @@ def _check_time_range(self) -> bool:
 
     if (misc_collection.find_one({'_id': "need_update_TV"})):
         print("!!!!!!!!!!!FOUNDED!!!!!!!!!!!!!!")
-        misc_collection.delete_one({'_id': "need_update_TV"})
 #        quit()
 
 
@@ -300,6 +299,9 @@ def _check_time_range(self) -> bool:
         LoadFromTV('SLVRUB_TOM', "MOEX:SLVRUB_TOM", 1, sn_dates)
         LoadFromTV('BTCRUB', "BINANCE:BTCRUB/10000", 10000, sn_dates)
         LoadFromTV('ETHRUB', "BINANCE:ETHRUB/100", 100, sn_dates)
+
+        misc_collection.delete_one({'_id': "need_update_TV"})
+
 #    quit()
 ############################################################
 ##  тут еще бы сделать проверку, что не загрузилось лишнего

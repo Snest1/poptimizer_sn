@@ -124,7 +124,9 @@ ENV/
 stat_*
 *_out
 /auto/port_link*
-/auto/work*
+/auto/!work*
+/auto/src/*/*.py_*
+/dump/source/*.*
 
 *back
 *.toml

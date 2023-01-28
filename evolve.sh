@@ -4,10 +4,17 @@ cd /home/sn/sn/poptimizer-master/
 echo $(date "+%Y.%m.%d %H:%M:%S") "Manual starting..."  >> evolve.log
 
 
+
 # Loop forever (until break is issued)
 while true; do
 
-    python3 -m poptimizer evolve
+#   python3 -m poptimizer evolve
+
+    source ./.venv/bin/activate
+    python -m poptimizer evolve
+    deactivate
+
+
 #    /home/sn/sn/poptimizer-master/daily.sh
 #    cp /home/sn/sn/poptimizer-master/logs/lgr.lgr /home/sn/sn/poptimizer-master/my_dumps/lgr_${v_date_YYYYMMDD_HHmm}.lgr
 

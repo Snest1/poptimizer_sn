@@ -62,13 +62,66 @@ class Optimizer:  # noqa: WPS214
         )
         return cur_prot
 
-
-
-
+    @property
     def __str__(self) -> str:
         """Информация о позициях, градиенты которых значимо отличны от 0."""
 
-#        self._portfolio = portfolio.positions
+        old_prot = self.portfolio
+
+        import time as tm
+        sn_trading_ops = pd.DataFrame(columns=[
+            'Ticker',
+            'op',
+            'Lots_chg',
+        ])
+#        sn_trading_ops.drop
+
+        def sn_quit(old_prot : Portfolio):
+            self._logger.info(cur_prot)
+            self._logger.info(self._metrics)
+
+            sn_trading_ops_fine = pd.DataFrame(columns=[
+                'Ticker',
+                'Mult',
+                'Lots_was',
+                'Summ_was',
+                'op',
+                'Lots_chg',
+                'Summ_chg',
+                'Lots_new',
+                'Summ_new',
+            ])
+
+            grouped_df = sn_trading_ops.groupby(["Ticker", "op"], as_index=False, axis=0).sum()
+            grouped_df.sort_values(['Lots_chg'], ascending=[True], inplace=True)
+
+            for i, r in grouped_df.iterrows():
+                sn_row = {
+                    'Ticker': r['Ticker'],
+                    'Mult': cur_prot.lot_size[r['Ticker']],
+                    'Lot_price': cur_prot.price[r['Ticker']],
+                    'Lots_was': old_prot.lots[r['Ticker']],
+                    'Summ_was': old_prot.value[r['Ticker']],
+                    'op': r['op'],
+                    'Lots_chg': r['Lots_chg'],
+                    'Summ_chg': cur_prot.value[r['Ticker']] - old_prot.value[r['Ticker']],
+                    'Lots_new': cur_prot.lots[r['Ticker']],
+                    'Summ_new': cur_prot.value[r['Ticker']],
+                }
+                row2df = pd.DataFrame.from_records([sn_row])
+                sn_trading_ops_fine = pd.concat([sn_trading_ops_fine, row2df], ignore_index=True,
+                                           axis=0)  # how to handle index depends on context
+
+            sn_trading_ops_fine.sort_values(['Summ_chg'], ascending=[True], inplace=True)
+            sn_trading_ops_fine.to_excel('/home/sn/sn/poptimizer-master/my_dumps/ops_' + tm.strftime("%Y%m%d_%H%M%S", tm.gmtime()) + '.xlsx', index=False)
+
+            self._logger.info(sn_trading_ops)
+            self._logger.info(sn_trading_ops_fine)
+
+            quit()
+            return
+
+        #        self._portfolio = portfolio.positions
 
         cur_prot = self.portfolio
 
@@ -93,8 +146,15 @@ class Optimizer:  # noqa: WPS214
 
 ### buy and sell
         if 1 == 1:
+            buy_vol_mult = {   # Словарь множителей объема.  Если бумаги нет, то = 1
+'BTCRUB': 5,  # майню, поэтому нужно докупать.
+'ETHRUB': 3,  # могу обменять на намайненное
+'GAZP': 2,
+'SBER': 2,
+'SBERP': 2,
+            }
 
-            buy_proir = {   # Словарь приоритетов
+            buy_prior = {   # Словарь приоритетов
 'PLZL': 1995,     # как GOLD
 'YNDX': 4002,     # GDR
 'AGRO': 4003,     # GDR
@@ -156,9 +216,7 @@ class Optimizer:  # noqa: WPS214
 'JNOSP': 3095,
 'SELG': 3097,
 'AFKS': 3110,
-'GLTR': 3130,
 'PMSBP': 3205,
-'AGRO': 3210,
 'DSKY': 3250,
 'ENPG': 3280,
 'SGZH': 3300,
@@ -176,7 +234,6 @@ class Optimizer:  # noqa: WPS214
 'MDMG': 4300,
 'GCHE': 4400,
 'FIXP': 4500,
-'FIVE': 5030,
 'TCSG': 5040,
 'QIWI': 5050,
 'OZON': 5080,
@@ -256,19 +313,12 @@ class Optimizer:  # noqa: WPS214
 'SLVRUB_TOM': 1980,          # лучше сейчас золото, чем рубли.    Но похоже, что при увеличении золота, LQDT совсем не уменьшеается...
 
 #'LQDT': 999,          # лучше сейчас золото, чем рубли.    Но похоже, что при увеличении золота, LQDT совсем не уменьшеается...
-}
-
-
-
-
-
-
-
+            }
 
             zero_buying = [
 ## 'LQDT',               # Закомментировал, т.к. готов покупать LQDT вместо бумаг
 #			# НИЖЕ ИСТОРИЧЕКСИЕ КОММЕНТАРИИ
-#			# закомментировал, т.к. покупка кэша означает необходимость продавать бумаги! нельзя его бесплатно купить.  
+#			# закомментировал, т.к. покупка кэша означает необходимость продавать бумаги! нельзя его бесплатно купить.
 #			# а может он и облигации скажет продавать, а так как я сейчас кэш бесплатно беру, то он и облиги к нему подтягивает
 #			# Проверю - не заставит ли продать вообще все, чтобы в кэш выйти
 #			# либо быть готовым довнести (тогда надо начальную сумму менять, а не покупать бесплатно)
@@ -279,7 +329,6 @@ class Optimizer:  # noqa: WPS214
 #'FIVE',                    # эта зависла на ирином ИИС, и не могу продать, пока не закрою ИИС.  Но буду бесплатно покупать, пока их не наберется больше, чем у меня есть
 #'GLTR',                    # эта зависла на моем ИИС, и не могу продать, пока не закрою ИИС. Но буду бесплатно покупать, пока их не наберется больше, чем у меня есть
 #'AGRO',                    # эта зависла на моем ИИС, и не могу продать, пока не закрою ИИС. Но буду бесплатно покупать, пока их не наберется больше, чем у меня есть
-
 ]
 
             skip_buying = [
@@ -295,17 +344,17 @@ class Optimizer:  # noqa: WPS214
 #'SBMX', #	БПИФ	БПИФ «Индекс МосБиржи полной доходности «брутто»» 	17673,8	Исключать			ВРЕМЕННО В КАЧЕСТВЕ ЗАМЕНЫ БУМАГ НА ДНЕ.
 'SBRI', #	БПИФ	БПИФ «Сбер – Ответственные инвестиции»	0	Исключать					ВРЕМЕННО В КАЧЕСТВЕ ЗАМЕНЫ БУМАГ НА ДНЕ. НЕЛИКВИД
 #'TMOS', #	БПИФ	БПИФ «Тинькофф Индекс Мосбиржи»	60830,42	Исключать					ВРЕМЕННО В КАЧЕСТВЕ ЗАМЕНЫ БУМАГ НА ДНЕ.
-'TRUR', #	БПИФ	БПИФ «Тинькофф – Стратегия вечного портфеля в рублях»	676479,44	Исключать		
+'TRUR', #	БПИФ	БПИФ «Тинькофф – Стратегия вечного портфеля в рублях»	676479,44	Исключать
 'KOGK', #	Говно	Коршуновский ГОК	36800	Исключать	Низкая ликвидность	Дочка Мечела без дивов
-'KUZB', #	Говно		882,5	Исключать	Низкая ликвидность	
-'LNZL', #	Говно	ЛенЗолото	0	Исключать	Делистинг	
-'LNZLP', #	Говно	ЛенЗолото	0	Исключать	Делистинг	
-'NSVZ', #	Говно	Наука и связь	1400	Исключать	Низкая ликвидность	
-'RBCM', #	Говно		856,2	Исключать	Параша на графике, низкая ликвидность	
-'RUGR', #	Говно	РусГрэйн	4880	Исключать	Риск банкротства, делистинга	
+'KUZB', #	Говно		882,5	Исключать	Низкая ликвидность
+'LNZL', #	Говно	ЛенЗолото	0	Исключать	Делистинг
+'LNZLP', #	Говно	ЛенЗолото	0	Исключать	Делистинг
+'NSVZ', #	Говно	Наука и связь	1400	Исключать	Низкая ликвидность
+'RBCM', #	Говно		856,2	Исключать	Параша на графике, низкая ликвидность
+'RUGR', #	Говно	РусГрэйн	4880	Исключать	Риск банкротства, делистинга
 #'SFIN', #	Говно	SFI Инв.холдинг	13968	Исключать	Параша на графике	Инв.холдинг
-'TGKD', #	Говно	Квадра	1285	Исключать	Низкая ликвидность, хаи	
-'VLHZ', #	Говно	Владимирский ХЗ	731,5	Исключать	Параша на графике, низкая ликвидность	
+'TGKD', #	Говно	Квадра	1285	Исключать	Низкая ликвидность, хаи
+'VLHZ', #	Говно	Владимирский ХЗ	731,5	Исключать	Параша на графике, низкая ликвидность
 'APTK',
 'VRSB',		#Низкая ликвидность
 'STSBP',	#Низкая ликвидность
@@ -316,6 +365,7 @@ class Optimizer:  # noqa: WPS214
 'MRKS',		#Низкая ликвидность
 'MRSB',		#Низкая ликвидность
 'KUZB',		#Низкая ликвидность
+'DSKY',		#Выкуп, делистинг
 ]
 
             skip_selling = [
@@ -325,7 +375,7 @@ class Optimizer:  # noqa: WPS214
 # 'BTCRUB', 'ETHRUB',      # в этом портфеле врядли придется это раскомментировать
 #'FIVE',                    # эта зависла на ирином ИИС, и не могу продать, пока не закрою ИИС.  Но ей место не тут, где она мешает выровнять портфель, а в zero_selling
 #'GLTR',                    # эта зависла на моем ИИС, и не могу продать, пока не закрою ИИС.
-] 
+]
             zero_selling = [
 # 'LQDT',                  # тут никогда не может быть LQDT
 # 'AKMB', 'OBLG', 'SBGB', 'SBRB',                      # в этом портфеле врядли придется это раскомментировать
@@ -348,6 +398,12 @@ class Optimizer:  # noqa: WPS214
             allow_daily_relimit = True
 
 
+### Для тестироавния
+#            start_cash = 10000
+#            daily_limit = 20000
+#            allow_daily_relimit = False
+
+
             cur_cash = start_cash
             cur_daily_limit = 0
             daily_limits = 0
@@ -357,18 +413,27 @@ class Optimizer:  # noqa: WPS214
 
             self._logger.info(f'OPER\thop_b\thop_s\tcur_daily_limit\tdaily_limits\tbuy\tb_PRIORITY\tlots\tlots_buy\tsumm_b\tsell\ts_PRIORITY\tlots\tlots_sell\tsumm_s\tcash_before')
 
+            algo = 'priority_and_volume'   #simple_priority
+
 # main loop.
             while 1 == 1:
 
-                df = self._for_trade()
+                try:
+                    df = self._for_trade()
+                except:
+                    self._logger.info(f'ERR in _for_trade')
+                    #self._logger.info(cur_prot)
+                    #self._logger.info(self._metrics)
+                    #quit()  ## nothing to buy
+                    sn_quit(old_prot)
 
                 rec = None
 
                 cur_metrics = metrics.MetricsResample(cur_prot)
-                grads = cur_metrics.all_gradients.iloc[:-2]
+                grads = cur_metrics.all_gradients.iloc[:-2]   # без последних двух строк (CASH и PORTFOLIO) таблицы, в которой строки - бумаги из портфеля, столбцы - градиенты по каждой модели.
             # гармоническое среднее квантилей градиентов вместо бутстрапа
             # вычислительно существенно быстрее
-                q_trans_grads = quantile_transform(grads, n_quantiles=grads.shape[0])
+                q_trans_grads = quantile_transform(grads, n_quantiles=grads.shape[0]) # grads.shape[0] - кол-во строк.
             # обработка (маскировка) возможных NA от плохих моделей
                 q_trans_grads = np.ma.array(q_trans_grads, mask=~(q_trans_grads > 0))
             # гармоническое среднее сильнее штрафует за низкие значения (близкие к 0),
@@ -378,7 +443,7 @@ class Optimizer:  # noqa: WPS214
                 turnover = quantile_transform(cur_prot.turnover_factor.loc[grads.index].values.reshape(-1, 1), n_quantiles=grads.shape[0])
                 priority = stats.hmean(np.hstack([hmean_q_trans_grads.reshape(-1, 1), turnover]), axis=1)
                 rec = pd.Series(data=priority, index=grads.index).to_frame(name="PRIORITY")
-            #  PRIORITY (from hmean)  not used, but i cant create  rec  other
+            #  PRIORITY (from hmean)  не использую, но по другому не умею создать rec  (SNEDIT)
 
             # так как все операции производятся в лотах, нужно знать стоимость лота и текущее количество лотов
                 rec["LOT_size"] = cur_prot.lot_size.loc[rec.index]
@@ -459,12 +524,13 @@ oper\t\
                 cnt = 0
 ##                top_prior2 = 0
 
-                while rec.SIGNAL[cnt] == 'BUY':
-                    if rec.PRIORITY_2[cnt].round(5) == 0:
+                while rec.SIGNAL[cnt] == 'BUY':     # Выберем бумаги к покупке кроме skip_buying
+                    if rec.PRIORITY_2[cnt].round(5) == 0 and selected_buy == []:
                         self._logger.info(f'Nothing to buy-2. Cash = {cur_cash:.2f}  Cur_daily_limit = {cur_daily_limit:.2f}')
-                        self._logger.info(cur_prot)
-                        self._logger.info(self._metrics)
-                        quit()	## nothing to buy
+                        # self._logger.info(cur_prot)
+                        # self._logger.info(self._metrics)
+                        # quit()  ## nothing to buy
+                        sn_quit(old_prot)
 
 #                    self._logger.info(f'tst1 {rec.index[cnt]} {rec.SIGNAL[cnt]}')
                     if rec.SIGNAL[cnt] == 'BUY' and rec.index[cnt] not in skip_buying:
@@ -476,33 +542,83 @@ oper\t\
 ##                            top_prior2 = rec.PRIORITY_2.loc[cnt]
                     cnt = cnt + 1
 
-                cur_buy_priority = 999999
-                for sb in selected_buy:
-                    prior = buy_proir.get(sb, -1)
-#                    self._logger.info(f'tst3 {buy_index} {sb} {prior}')
-##                    if prior > 0 and cur_buy_priority > prior and top_prior2 / 2 >>:
-                    if prior > 0 and cur_buy_priority > prior:
-                        self._logger.info(f'Priority algo: {buy_index}(P2={rec.PRIORITY_2.loc[buy_index]:.5f}, W={rec.WEIGHT.loc[buy_index]:.5f})={cur_buy_priority} replace on {sb}(P2={rec.PRIORITY_2.loc[sb]:.5f}, W={rec.WEIGHT.loc[sb]:.5f})={prior}')
-                        cur_buy_priority = prior
-                        buy_index = sb
+                #######
 
-                if cur_buy_priority != 999999:
-                    self._logger.info(f'Priority buy {buy_index} = {cur_buy_priority}')
-# Подбор из имеющихся вариантов по таблице приоритетов. Конец
+                if (algo == 'simple_priority'):   # Алгоритм основываеся просто на приоритетах
+                    cur_buy_priority = 999999     # Выбр по таблице приоритетов к покупке.
+                    for sb in selected_buy:
+                        prior = buy_prior.get(sb, -1)
+                        if prior > 0 and cur_buy_priority > prior:
+                            self._logger.info(f'Priority algo: {buy_index}(P2={rec.PRIORITY_2.loc[buy_index]:.5f}, W={rec.WEIGHT.loc[buy_index]:.5f})={cur_buy_priority} replace on {sb}(P2={rec.PRIORITY_2.loc[sb]:.5f}, W={rec.WEIGHT.loc[sb]:.5f})={prior}')
+                            cur_buy_priority = prior
+                            buy_index = sb
+                    if cur_buy_priority != 999999:
+                        self._logger.info(f'Priority buy {buy_index} = {cur_buy_priority}')
+# Подбор из имеющихся вариантов по таблице приоритетов. Конец.  buy_index - что же решили покупать.
+
+                #######
+
+                if (algo == 'priority_and_volume'):   # Алгоритм учитывает имеющийся объем бумаг, рекомендуемых стандартом к покупке.
+#В первую очередь покупать те, которые советует оптимизитор (и которые при этом не в исключениях),  которых нет в портфеле
+#Чем больше у меня акций, тем меньше приоритет к покупке
+#Если кол-во акций одинаковое - то приоритет бОльшему prior_2
+#Если какую-то бумагу я не люблю - то могу понимажть ей prior_2, вполлоть до 0
+
+#Коэф приоритета покупки рассчитывать так
+#  - Чем большая сумма  вложена в конкретной бумаге, тем меньше мой коэф приоритета к покупке
+#  - Если кол-во акций одинаковое - то приоритет бОльшему prior_2
+#  - Свое личное отношение к какой-либо бумаге выражать через множитель (> или < 0) к prior_2, вплоть до 0
 
 
+#                    selected_buy - список отобранных к покупке бумаг
+#                    rec.PRIORITY_2 - приоритеты, определенные стандартом
+#                    rec.VALUE - Текущий объем в деньгах
+#                    buy_prior - список бумаг с моими приоритетами
+#                    buy_vol_mult - список мультипликаторов объема
 
-                while buy_index == '':
+                    dic = {}
+                    for sb in selected_buy:
+                        b_prior = buy_prior.get(sb, -1)
+                        vol_mult = buy_vol_mult.get(sb, 1)  # Если найден, то = 1
+                        prior2 = rec.PRIORITY_2.loc[sb]
+                        vol_cur = rec.VALUE.loc[sb]
+#                     v1                        v2               v4        v3
+# ( ( vol_cur/1000 * b_prior/1000 * vol_mult )  /  prior2  +   1 / (prior2 * vol_mult)  )
+                        v1 = vol_cur/1000 * b_prior/1000 * vol_mult
+                        v2 = v1 / prior2
+                        v3 = prior2 * vol_mult   # Эта и след нужны для сравнения между собой новых бумаг
+                        v4 = 1 / v3
+                        v_final = v2 + v4   # Чем меньше - тем приоритетнее к покупке.
+                        dic[sb] = [ prior2, b_prior, vol_mult, vol_cur, v1, v2, v3, v4, v_final]
+
+                    if len(dic) > 0:
+                        df_tmp = pd.DataFrame.from_dict(dic, orient='index', columns = ['prior2', 'buy_prior', 'vol_mult', 'vol_cur', 'v1', 'v2', 'v3', 'v4', 'v_final'])
+                        df_tmp = df_tmp.sort_values('v_final')
+                        buy_index = df_tmp.index[0]
+                        self._logger.info(f'Priority VOL algo selected : {buy_index}')
+                        self._logger.info(f'\n{df_tmp}')
+                    else:
+                        self._logger.info(f'Nothing to buy (Priority VOL algo finished NULL). Cash = {cur_cash:.2f}  Cur_daily_limit = {cur_daily_limit:.2f}')
+                        # self._logger.info(cur_prot)
+                        # self._logger.info(self._metrics)
+                        # quit()  ## nothing to buy
+                        sn_quit(old_prot)
+
+                # Подбор из имеющихся вариантов по таблице приоритетов c учетом имеющихся бумаг. Конец.  buy_index - что же решили покупать.
+#######
+
+
+                while buy_index == '':  # Если по приоритетам ничего не нашли, то выберем первый в списке
                     if rec.SIGNAL[skipping] == 'BUY' and rec.index[skipping] not in skip_buying:
                         buy_index = rec.index[skipping]
                     elif rec.index[skipping] in skip_buying:
                         skipping = skipping + 1
                     else:
                         self._logger.info(f'Nothing to buy. Cash = {cur_cash:.2f}  Cur_daily_limit = {cur_daily_limit:.2f}')
-                        self._logger.info(cur_prot)
-                        self._logger.info(self._metrics)
-                        quit()	## nothing to buy
-
+                        # self._logger.info(cur_prot)
+                        # self._logger.info(self._metrics)
+                        # quit()  ## nothing to buy
+                        sn_quit(old_prot)
 
                 tmp_lots = deal_size // rec.LOT_price.loc[buy_index]
 
@@ -529,6 +645,14 @@ oper\t\
                         cur_daily_limit = cur_daily_limit + summ_b
                     self._logger.info(f'buy\t{hop_buy}\t{hop_sell}\t{daily_limits}\t{cur_daily_limit:.2f}\t{buy_index}\t{rec.PRIORITY_2.loc[buy_index]:.5f}\t{rec.lots.loc[buy_index]}\t{lots_b:.0f}\t{summ_b:.2f}\t\t\t\t\t\t{cur_cash:.2f}')
                     rec.loc[buy_index, 'lots'] = rec.lots.loc[buy_index] + lots_b
+                    sn_row = {
+'Ticker': buy_index,
+'op': 'BUY',
+'Lots_chg': lots_b,
+}
+                    row2df = pd.DataFrame.from_records([sn_row])
+                    sn_trading_ops = pd.concat([sn_trading_ops, row2df], ignore_index=True, axis=0)  # how to handle index depends on context
+
                     if buy_index not in zero_buying:
                         cur_cash = cur_cash - summ_b
                     else:
@@ -538,15 +662,19 @@ oper\t\
                         daily_limits = daily_limits + 1
                         self._logger.info(f'Daily limit reached. Cash = {cur_cash:.2f}  Daily_limit = {daily_limit:.2f} * {daily_limits}')
                         if daily_limits > 0 and allow_daily_relimit != True:
-                            self._logger.info(cur_prot)
-                            self._logger.info(self._metrics)
-                            quit()
+                            # self._logger.info(cur_prot)
+                            # self._logger.info(self._metrics)
+                            # quit()  ## nothing to buy
+                            sn_quit(old_prot)
                         cur_daily_limit = cur_daily_limit - daily_limit
 
 
                 elif allow_sell != True:     #no cash
                     self._logger.info(f'Cash is over. Cash = {cur_cash:.2f}  Cur_daily_limit = {cur_daily_limit:.2f} * {daily_limits}')
-                    quit()
+                    #self._logger.info(cur_prot)
+                    #self._logger.info(self._metrics)
+                    #quit()  ## nothing to buy
+                    sn_quit(old_prot)
                 else:     #no cash, trying to sell
 
                     rec.sort_values(["PRIORITY_2"], ascending=[True], inplace=True)
@@ -559,9 +687,10 @@ oper\t\
                             skipping = skipping + 1
                         else:
                             self._logger.info(f'Nothing to sell. Cash = {cur_cash:.2f}  Cur_daily_limit = {cur_daily_limit:.2f} * {daily_limits}')
-                            self._logger.info(cur_prot)
-                            self._logger.info(self._metrics)
-                            quit()
+                            # self._logger.info(cur_prot)
+                            # self._logger.info(self._metrics)
+                            # quit()  ## nothing to buy
+                            sn_quit(old_prot)
 
                     hop_sell = hop_sell + 1
 
@@ -586,6 +715,15 @@ oper\t\
 
                     self._logger.info(f'sell\t{hop_buy}\t{hop_sell}\t{daily_limits}\t{cur_daily_limit:.2f}\t{buy_index}\t{rec.PRIORITY_2.loc[buy_index]:.5f}\t{rec.lots.loc[buy_index]}\t{lots_b:.0f}\t{summ_b:.2f}\t{sell_index}\t{rec.PRIORITY_2.loc[sell_index]:.5f}\t{rec.lots.loc[sell_index]}\t{lots_s:.0f}\t{summ_s:.2f}\t{cur_cash:.2f}')
                     rec.loc[sell_index, 'lots'] = rec.lots.loc[sell_index] - lots_s
+                    sn_row = {
+'Ticker': sell_index,
+'op': 'SELL',
+'Lots_chg': lots_s * -1,
+}
+                    row2df = pd.DataFrame.from_records([sn_row])
+                    sn_trading_ops = pd.concat([sn_trading_ops, row2df], ignore_index=True,
+                                               axis=0)  # how to handle index depends on context
+
                     if sell_index not in zero_selling:
                         cur_cash = cur_cash + summ_s
                     else:
@@ -597,13 +735,15 @@ oper\t\
                 self._metrics = metrics.MetricsResample(self._portfolio)
 
 
-            self._logger.info(cur_prot)
-            self._logger.info(self._metrics)
-            self._logger.info(f'Dummy quit')
-            quit()
+            self._logger.info(f'Dummy quit1')
+            # self._logger.info(cur_prot)
+            # self._logger.info(self._metrics)
+            # quit()  ## nothing to buy
+            sn_quit()
+        self._logger.info(f'Dummy quit2')
+        sn_quit()
 
-
-#########################################
+        #########################################
 
 
         hops = 0
