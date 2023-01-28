@@ -14,7 +14,7 @@ _MONGO_URI: Final = "mongodb://localhost:27017"
 
 # Размер пула http-соединений - при большем размере многие сайты ругаются
 #_POOL_SIZE: Final = 20
-_POOL_SIZE: Final = 5
+_POOL_SIZE: Final = 1
 
 
 def _find_running_mongo_db() -> Optional[psutil.Process]:
@@ -36,8 +36,8 @@ def start_mongo_server() -> psutil.Process:
         "--dbpath",
         _MONGO_PATH,
         "--directoryperdb",
-        "--bind_ip",
-        "localhost",
+        "--bind_ip_all",
+#        "localhost",
     ]
     return psutil.Popen(mongo_server)
 
@@ -46,7 +46,7 @@ def _clean_up(session: aiohttp.ClientSession) -> None:
     """Закрывает клиентскую сессию aiohttp."""
     loop = asyncio.get_event_loop()
     loop.run_until_complete(session.close())
-
+    loop.run_until_complete(asyncio.sleep(1))
 
 def http_session_factory(pool_size: int) -> aiohttp.ClientSession:
     """Клиентская сессия aiohttp."""
