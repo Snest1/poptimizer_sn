@@ -163,8 +163,7 @@ class Evolution:  # noqa: WPS214
                 return None
 
             if (rnd := np.random.random()) < (slowness := margin[1]):
-                self._logger.info(f"Медленный не размножается {rnd=:.2%} < {slowness=:.2%}...\n")
-
+                self._logger.info(f"2 Медленный, не размножается (но будет сохранен) {rnd=:.2%} < {slowness=:.2%}...\n")
                 return None
 
     def _eval_organism(self, organism: population.Organism) -> tuple[float, float] | None:
@@ -178,21 +177,25 @@ class Evolution:  # noqa: WPS214
             return None
 
         all_dates = listing.all_history_date(self._tickers, end=self._end)
+        sn_len = 0
 
         try:
             if organism.date == self._end :
                 prob = 1 - _time_delta(organism)
                 retry = stats.geom.rvs(prob)
                 dates = all_dates[-(max(organism.scores, self._tests - 1)  + retry): -organism.scores].tolist()
-                organism.retrain(self._tickers, dates[0])
+                organism.retrain(self._tickers, dates[0], sn_comments = f"{organism.id}\t{dates[0]}"))
+                sn_len = len(dates)
                 dates = reversed(dates)
             elif organism.scores:
                 if self._tickers != tuple(organism.tickers):
-                    organism.retrain(self._tickers, self._end)
+                    organism.retrain(self._tickers, self._end, sn_comments = f"{organism.id}\t{self._end}")
                 dates = [self._end]
+                sn_len = len(dates)
             else:
                 dates = all_dates[-self._tests :].tolist()
-                organism.retrain(self._tickers, dates[0])
+                sn_len = len(dates)
+                organism.retrain(self._tickers, dates[0], sn_comments = f"{organism.id}\t{dates[0]}")
         except (ModelError, AttributeError) as error:
             self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 09 Удаляю - {error}\n")
             organism.die()
@@ -205,7 +208,7 @@ class Evolution:  # noqa: WPS214
         for date in dates:
 #            print(f"!!!!!! date={date} in dates={dates}")
             cnt += 1
-            self._logger.info(f"!!!!!! date={date}   {cnt} of {len(dates)}")
+            self._logger.info(f"!!!!!! date={date}   {cnt} of {sn_len}")
             try:
                 organism.evaluate_fitness(self._tickers, date, sn_comments = f"{organism.id}\t{date}")
             except (ModelError, AttributeError) as error:
