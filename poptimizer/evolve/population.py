@@ -110,15 +110,16 @@ class Organism:  # noqa: WPS214
         self._doc.ub = ub
         self._doc.save()
 
-    def retrain(self, tickers: tuple[str, ...], end: pd.Timestamp):
+    def retrain(self, tickers: tuple[str, ...], end: pd.Timestamp, sn_comments: str = ""):
         """Переобучает модель."""
         timer = time.monotonic_ns()
-        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), None)
+        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), None, sn_comments=sn_comments)
         model.quality_metrics
         self._doc.model = bytes(model)
         self._doc.tickers = list(tickers)
         self._doc.timer = time.monotonic_ns() - timer
 
+#    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
     def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp, sn_comments: str = "") -> list[float]:
         """Вычисляет качество организма."""
         doc = self._doc
