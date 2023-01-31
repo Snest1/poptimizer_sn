@@ -328,6 +328,11 @@ sn_tickers = []   # список
 sn_dates = []   # список
 for quote in quotes_collection.find():
     sn_tickers.append(quote['_id'])
+
+    sn_min = min(quote['data']['index'], default="EMPTY")
+    sn_max = max(quote['data']['index'], default="EMPTY")
+    print(f"minmax {quote['_id']} {sn_min} {sn_max}")
+
     for one_date in quote['data']['index']:
         if one_date not in sn_dates:
             sn_dates.append(one_date)
