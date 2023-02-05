@@ -31,7 +31,7 @@ cd /home/sn/sn/poptimizer-master/
 
 #.venv/bin/python3 -m poptimizer optimize --for-sell 3 $(date "+%Y-%m-%d") > ${dump_folder}/log_${v_date_YYYYMMDD_HHmm}
 ##python3 -m poptimizer optimize --for-sell 3 $(date "+%Y-%m-%d") > ${dump_folder}/log_${v_date_YYYYMMDD_HHmm}
-source ./.venv/bin/activate
+source /home/sn/sn/poptimizer-master/.venv/bin/activate
 python -m poptimizer optimize --for-sell 3 $(date "+%Y-%m-%d") > ${dump_folder}/log_${v_date_YYYYMMDD_HHmm}
 #python -m poptimizer optimize --for-sell 3 $(date "+%Y-%m-%d")
 deactivate

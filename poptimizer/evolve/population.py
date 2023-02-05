@@ -174,7 +174,7 @@ class Organism:  # noqa: WPS214
 
         model = Model(tickers, end, self.genotype.get_phenotype(), pickled_model)
         forecast = model.forecast()
-        LOGGER.info(f"OK.{doc.id}")
+#        LOGGER.info(f"OK.{doc.id}")
         if np.any(np.isnan(forecast.cov)) or np.any(np.isinf(forecast.cov)):
             LOGGER.error(f"!!! ForecastError.  Удаляю {doc.id}") #Эта ошибка может быть, если по одной из бумаг котировки не менялись достаточно долго.
             self.die()
