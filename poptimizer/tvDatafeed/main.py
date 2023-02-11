@@ -425,6 +425,7 @@ class TvDatafeed:
         n_bars: int = 10,
         fut_contract: int = None,
         extended_session: bool = False,
+        adj_divi: bool = False,
     ) -> pd.DataFrame:
         """get historical data
 
@@ -442,6 +443,13 @@ class TvDatafeed:
         symbol = self.__format_symbol(
             symbol=symbol, exchange=exchange, contract=fut_contract
         )
+
+
+        sn_adj = ''
+        if adj_divi:
+                sn_adj = 'dividends'
+        else:
+                sn_adj = 'splits'
 
         interval = interval.value
 
@@ -492,8 +500,11 @@ class TvDatafeed:
                 "symbol_1",
                 '={"symbol":"'
                 + symbol
-                + '","adjustment":"splits","session":'
+#                + '","adjustment":"splits","session":'
+                + '","adjustment":"' + sn_adj + '","session":'
                 + ('"regular"' if not extended_session else '"extended"')
+
+
                 + "}",
             ],
         )
@@ -529,10 +540,11 @@ if __name__ == "__main__":
     print(tv.get_hist("NIFTY", "NSE", fut_contract=1))
     print(
         tv.get_hist(
-            "EICHERMOT",
-            "NSE",
+            "GAZP",
+            "MOEX",
             interval=Interval.in_1_hour,
             n_bars=500,
             extended_session=False,
+            adj_divi=True,
         )
     )
