@@ -118,3 +118,9 @@ ENV/
 
 # Poptimizer logs
 /logs/
+
+#SN_ADDED
+/my_dumps/*
+stat_*
+*_out
+/auto/port_link*

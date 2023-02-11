@@ -34,7 +34,7 @@ class CPI(base.AbstractTable[events.TradingDayEnded]):
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим, а данные совпадать."""
         base.check_unique_increasing_index(df_new)
-        base.check_dfs_mismatch(self.id_, self._df, df_new)
+        base.check_dfs_mismatch(self.id_, self._df, df_new, 'CPI')
 
     def _new_events(self, event: events.TradingDayEnded) -> List[domain.AbstractEvent]:
         """Обновление индекса инфляции не порождает события."""

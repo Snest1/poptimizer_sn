@@ -65,13 +65,29 @@ class Portfolio:
     def __str__(self) -> str:
         """Отображает сводную информацию о портфеле."""
         name = ", ".join(self.name)
+
+
+
+#SNADDED
+#        tmp_format = pd.options.display.float_format
+#        pd.options.display.float_format = '{:.2f}'.format
+        tmp_df = self._main_info_df()
+        tmp_df['VALUE'] = tmp_df['VALUE'].map('{:.2f}'.format)
+        tmp_df['WEIGHT'] = tmp_df['WEIGHT'].map('{:.4f}'.format)
+###        tmp_df['PRICE'] = tmp_df['PRICE'].map('{:.4f}'.format)
+
         blocks = [
             f"ПОРТФЕЛЬ [{name}] - {self._date.date()}",
             self._positions_stats(),
-            f"{self._main_info_df()}",
+#            f"{self._main_info_df()}",
+            f"{tmp_df}",
         ]
 
+#        pd.options.display.float_format = tmp_format
+
         return "\n\n".join(blocks)
+
+
 
     def _main_info_df(self) -> pd.DataFrame:
         """Сводная информация по портфелю."""
@@ -264,6 +280,39 @@ def load_from_yaml(date: Union[str, pd.Timestamp], ports: set = None) -> Portfol
         value = None
 
     return Portfolio(name, date, cash, positions, value)
+
+def load_from_yamlwl_(date: Union[str, pd.Timestamp], ports: set = None) -> Portfolio:
+    """Загружает информацию о портфеле из yaml-файлов."""
+    usd = indexes.usd(pd.Timestamp(date))
+    usd = usd.iloc[-1]
+    cash = 0
+    value = 0
+
+    positions = collections.Counter()
+    name = list()
+    for path in sorted(config.PORT_PATH.glob("*.yamlwl")):
+        if ports is None or path.name in ports:
+            name.append(path.stem)
+            with path.open() as port:
+                port = yaml.safe_load(port)
+                positions.update(port.pop("positions"))
+                cash += port.get("USD", 0) * usd + port.get("RUR", 0)
+                value += port.get("value", 0)
+
+            if value:
+                LOGGER.info(f"Проверка стоимости: {path}")
+                try:
+                    Portfolio([path.stem], date, cash, positions, value)
+                except config.POptimizerError as err:
+                    LOGGER.error(err)
+                    continue
+                LOGGER.info("OK")
+
+    if not value:
+        value = None
+
+    return Portfolio(name, date, cash, positions, value)
+
 
 
 def load_tickers() -> tuple[str]:

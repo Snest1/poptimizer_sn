@@ -43,8 +43,10 @@ def _namer(default_name: str) -> str:
 
 def get_handlers(
     logs_path: Path,
-    rotate_mega_bytes: int = 2,
-    rotate_count: int = 5,
+#SNEdit below
+    rotate_mega_bytes: int = 50,
+    rotate_count: int = 20,
+
 ) -> list[Handler]:
     """Настраивает логирование в stdout и файл с ротацией."""
     logs_path.mkdir(exist_ok=True)

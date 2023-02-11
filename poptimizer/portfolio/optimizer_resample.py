@@ -1,4 +1,7 @@
 """Оптимизатор портфеля на основе ресемплирования отдельных прогнозов."""
+import logging
+
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -42,6 +45,9 @@ class Optimizer:  # noqa: WPS214
         self._p_value = p_value
         self._metrics = metrics.MetricsResample(portfolio)
         self._for_sell = for_sell - 1
+        self._logger = logging.getLogger()
+
+
 
     def __str__(self) -> str:
         """Информация о позициях, градиенты которых значимо отличны от 0."""
@@ -75,6 +81,34 @@ class Optimizer:  # noqa: WPS214
         sell = self._select_sell(conf_int, break_even)
 
         bye = self._select_buy(break_even, conf_int)
+
+
+
+
+##        self._logger.info(f'SNLOG10: {bye}')
+##        bye = bye[bye.index.str.len() >= 5]
+
+##       Говно
+#        bye = bye.drop(['FXKZ', 'LNZL', 'LNZLP', 'RKKE', 'SBRI', 'VTBX', 'TRUR', 'VLHZ', 'DIVD', 'LIFE', 'GTRK', 'MSTT', 'RCMX', 'TMOS', 'SBMX', 'TGKN', 'SFIN', 'AKME', 'KROT', 'NSVZ', 'SLEN', 'QIWI', 'LSNG', 'KOGK', 'BANE', 'TGKD', 'RGSS', 'RBCM', 'RUGR', 'RTKM'], errors='ignore')
+
+
+##      БПИФ
+#        bye = bye.drop(['SUGB', 'AKMB', 'SBGB', 'VTBB', 'SBRI', 'VTBX', 'TRUR', 'DIVD', 'RCMX', 'TMOS', 'SBMX', 'AKME', 'EQMX'], errors='ignore')
+
+##      Obligi
+#        bye = bye.drop(['BCSB', 'SBRB'], errors='ignore')
+
+##       USA
+#        bye = bye[~bye.index.str.contains('-RM', regex=False)]
+
+##       Временно!!!   Отавляет только то, что хочу купить или интересно.  Не включено то, за чем надо наблюдать и остальные бумаги, которые не вошли в первоначальную выборку и не были оценены
+##        bye = bye[bye.index.str.contains('FXGD|KAZTP|NKHP|KMAZ|AMEZ|KAZT|AQUA|HIMCP|GCHE|MGNZ|VRSB|KZOSP|TRNFP|PMSB|SELG|ROLO|YAKG|UNAC|SVAV|INGR|RZSB|BRZL|AKRN|NFAZ|USBN|MRKY|SGZH|STSBP|MTLRP|CHMK|ISKJ|BSPB|RUAL|DIOD|NKNC|VTBM|MSNG|SMLT|KZOS|MRKZ|MRSB|GEMA|ZILL|MRKU|RASP|ENPG|MRKP|BELU|TRMK|TGKA|MRKC|MTLR|FESH|MGNT', case=False, regex=True)]
+
+
+
+
+
+
 
         rez = pd.concat([bye, sell], axis=0)
         rez = rez.sort_values(_PRIORITY, ascending=False)

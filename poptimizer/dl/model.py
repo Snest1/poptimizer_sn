@@ -34,6 +34,14 @@ DAY_IN_SECONDS: Final = 24 * 60**2
 
 LOGGER = logging.getLogger()
 
+from pymongo.collection import Collection
+from poptimizer.store.database import DB, MONGO_CLIENT
+_COLLECTION_speedy = MONGO_CLIENT[DB]["sn_speedy"]
+def snspeedy_get_collection() -> Collection:
+    return _COLLECTION_speedy
+
+
+
 
 class TooLongHistoryError(ModelError):
     """Слишком длинная история признаков.
@@ -59,6 +67,8 @@ def log_normal_llh_mix(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Minus Normal Log Likelihood and forecast means."""
     dist = model.dist(batch)
+#    llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))	#ошибка при очень длинных тестах
+
     try:
         llh = dist.log_prob(batch["Label"] + torch.tensor(1.0))
     except ValueError:
@@ -76,6 +86,7 @@ class Model:
         end: pd.Timestamp,
         phenotype: data_loader.PhenotypeData,
         pickled_model: Optional[bytes] = None,
+        sn_comments: str = "",
     ):
         """Сохраняет необходимые данные.
 
@@ -94,6 +105,8 @@ class Model:
         self._pickled_model = pickled_model
         self._model = None
         self._llh = None
+        self.sn_comments = sn_comments
+
 
     def __bytes__(self) -> bytes:
         """Сохраненные параметры для натренированной модели."""
@@ -129,28 +142,51 @@ class Model:
 
         return self._model
 
+
     def _eval_llh(self) -> tuple[float, float]:
         """Вычисляет логарифм правдоподобия.
 
         Прогнозы пересчитываются в дневное выражение для сопоставимости и вычисляется логарифм
         правдоподобия. Модель загружается при наличии сохраненных весов или обучается с нуля.
         """
+#        LOGGER.info(f"SNEDIT_010: Before DescribedDataLoader")
+## Тут основной тормоз во время пилы
+## Причем именно при вызове этой подпрограммы, а не внутри нее.   Либо при вызове происходит инициация класса.
+
+#        import pickle
+#        collection_speedy = snspeedy_get_collection()
+#
+##save
+#        import bson
+#        speedy_id = collection_speedy.insert_one({
+#            "bin_var1": bson.Binary(pickle.dumps( self._phenotype["data"] )),
+##            "bin_var2": bson.Binary(pickle.dumps(state_dict)),
+#        })
+
+
         loader = data_loader.DescribedDataLoader(
             self._tickers,
             self._end,
             self._phenotype["data"],
             data_params.TestParams,
+#            speedy_id.inserted_Orid,
+#            "snParam1",
         )
+#        LOGGER.info(f"SNEDIT_011: After DescribedDataLoader")
 
         n_tickers = len(self._tickers)
         days, rez = divmod(len(loader.dataset), n_tickers)
         if rez:
             history = int(self._phenotype["data"]["history_days"])
 
-            raise TooLongHistoryError(f"Слишком большая длинна истории - {history}")
+            raise TooLongHistoryError(f"Слишком большая длинна истории - {history}. len(loader.dataset)={len(loader.dataset)}, n_tickers={n_tickers}, days={days}, rez={rez}")
 
+#        LOGGER.info(f"SNEDIT_012: After DescribedDataLoader")
+## Тут основная долгая загрузка процессора. Вопросов нет
         model = self.prepare_model(loader)
+#        LOGGER.info(f"SNEDIT_013: After DescribedDataLoader")
         model.to(DEVICE)
+#        LOGGER.info(f"SNEDIT_014: After DescribedDataLoader")
         loss_fn = log_normal_llh_mix
 
         llh_sum = 0
@@ -173,11 +209,14 @@ class Model:
 
                 bars.set_postfix_str(f"{llh_sum / weight_sum + llh_adj:.5f}")
 
+#        LOGGER.info(f"SNEDIT_015: After DescribedDataLoader")
         all_means = torch.cat(all_means).cpu().numpy().flatten()
         all_vars = torch.cat(all_vars).cpu().numpy().flatten()
         all_labels = torch.cat(all_labels).cpu().numpy().flatten()
         llh = llh_sum / weight_sum + llh_adj
 
+#        LOGGER.info(f"SNEDIT_016: After DescribedDataLoader")
+# Тут выводит параметры шага пилы.  Можно добавить номер шага, но его придется передавать снаружи
         ir = _opt_port(
             all_means,
             all_vars,
@@ -185,7 +224,9 @@ class Model:
             self._tickers,
             self._end,
             self._phenotype,
+            self.sn_comments,
         )
+#        LOGGER.info(f"SNEDIT_017: After DescribedDataLoader")
 
         return llh, ir
 
@@ -224,6 +265,7 @@ class Model:
                 self._end,
                 phenotype["data"],
                 data_params.TrainParams,
+#                "snParam2",
             )
         except ValueError:
             history = int(self._phenotype["data"]["history_days"])
@@ -347,6 +389,7 @@ def _opt_port(
     tickers: tuple[str],
     end: pd.Timestamp,
     phenotype: PhenotypeData,
+    sn_comment: str = ""
 ) -> float:
     """Доходность портфеля с максимальными ожидаемыми темпами роста.
 
@@ -372,6 +415,24 @@ def _opt_port(
     ret_plan = (w * mean).sum()
     std_plan = (w.reshape(1, -1) @ sigma @ w.reshape(-1, 1)).item() ** 0.5
 
+    l_wgts = []   # список
+
+    c=0
+    for t in tickers:
+        l_wgts.append([ w[c]*100, t])
+        c=c+1
+    l_wgts.sort(reverse=True)
+
+    c=0
+    max_t=""
+    for wg in l_wgts:
+        if wg[0] <= 1 or c > 10:
+            break
+        max_t= max_t + f"{wg[1]}: {wg[0]:.2f}  "
+        c=c+1
+
+
+
     LOGGER.info(
         " / ".join(
             [
@@ -382,9 +443,27 @@ def _opt_port(
                 f"STD = {std_plan:.2%}",
                 f"POS = {int(1 / (w ** 2).sum())}",
                 f"MAX = {w.max():.2%}",
+                f"{sn_comment}",
+                f"\n{max_t}",
             ],
         ),
     )
+
+
+
+    if sn_comment != "":
+        from datetime import datetime
+        now = datetime.now()
+        curdt=now.strftime("%Y-%m-%d %H:%M:%S")
+
+        f = open("/home/sn/sn/poptimizer-master/stat_POS.txt",'a')
+
+        if f.tell() == 0:
+            f.write(f"now\tsn_comment\t\t\t\tDELTA\tRET\tAVE\tRET_PLAN\tSTD_PLAN\tPOS\tMAX\tTICKERS\n")
+        else:
+            f.write(f"{curdt}\t{sn_comment}\t{delta*100:.2f}\t{ret*100:.2f}\t{ave*100:.2f}\t{ret_plan*100:.2f}\t{std_plan*100:.2f}\t{int(1 / (w ** 2).sum())}\t{w.max()*100:.2f}\t{max_t}\n")
+        f.close()
+
 
     return delta
 

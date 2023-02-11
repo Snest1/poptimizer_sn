@@ -10,6 +10,10 @@ from poptimizer import config
 from poptimizer.data import ports
 from poptimizer.shared import domain
 
+import logging
+logger = logging.getLogger()
+
+
 PACKAGE = "data"
 
 
@@ -111,7 +115,7 @@ class TableNewDataMismatchError(config.POptimizerError):
     """Новые данные не соответствуют старым данным таблицы."""
 
 
-def check_dfs_mismatch(id_: domain.ID, df_old: pd.DataFrame, df_new: pd.DataFrame) -> None:
+def check_dfs_mismatch(id_: domain.ID, df_old: pd.DataFrame, df_new: pd.DataFrame, what: str = '') -> None:
     """Сравнивает новые данные со старыми для старого индекса."""
     if df_old is None:
         return
@@ -120,4 +124,5 @@ def check_dfs_mismatch(id_: domain.ID, df_old: pd.DataFrame, df_new: pd.DataFram
     try:
         pd.testing.assert_frame_equal(df_new_val, df_old, check_dtype=False)
     except AssertionError:
+        logger.error(f"ERROR tables check for: {what}")
         raise TableNewDataMismatchError(id_)

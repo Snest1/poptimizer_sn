@@ -6,7 +6,8 @@ import typer
 from poptimizer import config
 from poptimizer.data.views import div_status
 from poptimizer.evolve import Evolution
-from poptimizer.portfolio import load_from_yaml, optimizer_hmean, optimizer_resample
+from poptimizer.portfolio import load_from_yaml, optimizer_hmean, optimizer_resample, optimizer_resample_sn
+#from poptimizer.portfolio import load_from_yamlwl
 
 LOGGER = logging.getLogger()
 
@@ -25,11 +26,18 @@ def dividends(ticker: str) -> None:
 def optimize(date: str = typer.Argument(..., help="YYYY-MM-DD"), for_sell: int = 1) -> None:
     """Optimize portfolio."""
     port = load_from_yaml(date)
+#    portwl = load_from_yamlwl(date)
+
+#SNEDIT
+#    LOGGER.info(portwl)
 
     if config.OPTIMIZER == "resample":
         opt = optimizer_resample.Optimizer(port, for_sell=for_sell)
+    elif config.OPTIMIZER == "resample_sn":
+        opt = optimizer_resample_sn.Optimizer(port, for_sell=for_sell)
     else:
         opt = optimizer_hmean.Optimizer(port)
+#        opt = optimizer_hmean.Optimizer(port, portwl)
 
     LOGGER.info(opt.portfolio)
     LOGGER.info(opt.metrics)

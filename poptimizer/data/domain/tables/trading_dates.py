@@ -15,8 +15,10 @@ from poptimizer.shared import domain
 _MOEX_TZ: Final = zoneinfo.ZoneInfo(key="Europe/Moscow")
 
 # Торги заканчиваются в 24.00, но данные публикуются 00.45
-_END_HOUR: Final = 0
-_END_MINUTE: Final = 45
+#_END_HOUR: Final = 0
+#_END_MINUTE: Final = 45
+_END_HOUR: Final = 4    # Но мои валюты на трейдингвью закрываются скорее всего около 3.00  На всякий случай +1 час на зимнее время
+_END_MINUTE: Final = 5
 
 
 def _to_utc_naive(date: datetime) -> datetime:

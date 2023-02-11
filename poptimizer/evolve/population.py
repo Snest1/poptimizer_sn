@@ -119,7 +119,7 @@ class Organism:  # noqa: WPS214
         self._doc.tickers = list(tickers)
         self._doc.timer = time.monotonic_ns() - timer
 
-    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp) -> list[float]:
+    def evaluate_fitness(self, tickers: tuple[str, ...], end: pd.Timestamp, sn_comments: str = "") -> list[float]:
         """Вычисляет качество организма."""
         doc = self._doc
         tickers = list(tickers)
@@ -127,7 +127,7 @@ class Organism:  # noqa: WPS214
         if end == self.date or doc.model is None or tickers != doc.tickers:
             raise ReevaluationError
 
-        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), doc.model)
+        model = Model(tuple(tickers), end, self.genotype.get_phenotype(), doc.model, sn_comments=sn_comments)         #SN_EDIT
         llh, ir = model.quality_metrics
 
         if self.date is None or end > self.date:
@@ -148,9 +148,16 @@ class Organism:  # noqa: WPS214
         """Организм удаляется из популяции."""
         self._doc.delete()
 
-    def make_child(self, scale: float) -> "Organism":
+    def make_child(self, scale: float, **kwargs) -> "Organism":  # SN_EDIT
         """Создает новый организм с помощью дифференциальной мутации."""
-        parent1, parent2 = _get_parents()
+
+#        parent1, parent2 = _get_parents()   # SNEDIT
+        parent1 = kwargs.get('par1', None)
+        parent2 = kwargs.get('par2', None)
+        if parent1 == None or parent2 == None:
+            parent1, parent2 = _get_parents()
+        LOGGER.info(f"parent1 = {parent1.id}, parent2 = {parent2.id})")
+
         child_genotype = self.genotype.make_child(parent1.genotype, parent2.genotype, scale)
 
         return Organism(genotype=child_genotype)
@@ -349,3 +356,22 @@ def max_scores() -> int:
         max_wins = max_wins["wins"]
 
     return max_wins
+
+
+def min_scores() -> int:
+    collection = store.get_collection()
+    db_find = collection.find
+    request = {
+        "filter": {"wins": {"$exists": True}},
+        "projection": ["wins"],
+        "sort": [("wins", pymongo.ASCENDING)],
+        "limit": 1,
+    }
+
+    wins = list(db_find(**request))
+    min_wins = 0
+    if wins:
+        min_wins = wins[0]
+        min_wins = min_wins["wins"]
+
+    return min_wins

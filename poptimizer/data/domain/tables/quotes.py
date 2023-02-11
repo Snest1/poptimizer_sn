@@ -74,7 +74,7 @@ class Quotes(base.AbstractTable[events.TickerTraded]):
     def _validate_new_df(self, df_new: pd.DataFrame) -> None:
         """Индекс должен быть уникальным и возрастающим, а данные стыковаться."""
         base.check_unique_increasing_index(df_new)
-        base.check_dfs_mismatch(self.id_, self._df, df_new)
+        base.check_dfs_mismatch(self.id_, self._df, df_new, 'qoutes_'+str(self.id_))
 
     def _new_events(self, event: events.TickerTraded) -> List[domain.AbstractEvent]:
         """Обновление котировок не порождает события."""

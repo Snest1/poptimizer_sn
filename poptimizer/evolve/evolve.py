@@ -15,6 +15,59 @@ from poptimizer.evolve import population, seq
 from poptimizer.portfolio.portfolio import load_tickers
 
 
+def LoadFromTV(ticker: str, TVformula: str, mult: int, sn_dates: list):
+## Тут загружаем в базу quotes все нужные данные для тех бумаг, готорый нет в TQBR
+        from poptimizer.shared import adapters, col
+        import pandas as pd
+
+        sn_ticker = ticker
+        sn_df_quotes = pd.DataFrame(columns = [col.DATE, col.OPEN, col.CLOSE, col.HIGH, col.LOW, col.TURNOVER])
+        sn_df_quotes = sn_df_quotes.set_index(col.DATE)
+
+#        import datetime
+#        bars = 10
+#        datetime.datetime.strptime(last_date, "%Y-%m-%d").date() - datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+
+        from tvDatafeed import TvDatafeed,Interval
+        tv = TvDatafeed()
+        tv.clear_cache()
+#        t_GLDRUB = tv.get_hist("MOEX:GLDRUB_TOM", interval=Interval.in_daily,n_bars=bars.days)
+        t_GLDRUB = tv.get_hist(TVformula, interval=Interval.in_daily,n_bars=10000)
+#        self._logger(f"SNLOG_09. TV={t_GLDRUB}")
+
+        sn_df_quotes[col.OPEN] = t_GLDRUB['open']
+        sn_df_quotes[col.CLOSE] = t_GLDRUB['close']
+        sn_df_quotes[col.HIGH] = t_GLDRUB['high']
+        sn_df_quotes[col.LOW] = t_GLDRUB['low']
+        sn_df_quotes[col.TURNOVER] = t_GLDRUB['volume'].mul(t_GLDRUB['close']) * mult
+        sn_df_quotes.index = sn_df_quotes.index.normalize()         # Откинем часы
+
+
+#  Оставим только те даты, за которые котировки уже есть
+        sn_df_quotes = sn_df_quotes.loc[sn_df_quotes.index.isin(  sn_dates  )]
+
+#  Сохраним новую котировку
+        from pymongo import MongoClient
+        import pickle
+
+        client = MongoClient('localhost', 27017)
+        db = client['data']
+        quotes_collection = db['quotes']
+
+        import datetime
+        post = {"_id": ticker,
+          "data": sn_df_quotes.to_dict("split"),
+          "timestamp": datetime.datetime.utcnow()}
+
+        quotes_collection.replace_one(filter={"_id": ticker}, replacement=post, upsert=True)
+
+
+        import time
+        time.sleep(10)
+#        exit()
+
+
+
 class Evolution:  # noqa: WPS214
     """Эволюция параметров модели.
 
@@ -48,7 +101,7 @@ class Evolution:  # noqa: WPS214
 
         self._setup()
 
-        while _check_time_range():
+        while _check_time_range(self):
             step = self._step_setup(step)
 
             date = self._end.date()
@@ -118,8 +171,9 @@ class Evolution:  # noqa: WPS214
         try:
             self._logger.info(f"{organism}\n")
         except AttributeError as err:
+            self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 04 Удаляю - {err}\n")
             organism.die()
-            self._logger.error(f"Удаляю - {err}\n")
+#            self._logger.error(f"Удаляю - {err}\n")
 
             return None
 
@@ -146,12 +200,17 @@ class Evolution:  # noqa: WPS214
             return None
 
 
+        cnt = 0
         for date in dates:
+#            print(f"!!!!!! date={date} in dates={dates}")
+            cnt += 1
+            self._logger.info(f"!!!!!! date={date}   {cnt} of {len(dates)}")
             try:
-                organism.evaluate_fitness(self._tickers, date)
+                organism.evaluate_fitness(self._tickers, date, sn_comments = f"{organism.id}\t{date}")
             except (ModelError, AttributeError) as error:
+                self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 03 Удаляю - {error}\n")
                 organism.die()
-                self._logger.error(f"Удаляю - {error}\n")
+#                self._logger.error(f"Удаляю - {error}\n")
 
                 return None
 
@@ -206,7 +265,63 @@ def _time_delta(org):
     return stats.percentileofscore(times, org.timer, kind="mean") / 100
 
 
-def _check_time_range() -> bool:
+def _check_time_range(self) -> bool:
+
+### Если ранее былии загружены курсы MOEX, надо обновить остальные курсы  2023
+
+    from pymongo.collection import Collection
+    from poptimizer.store.database import DB, MONGO_CLIENT
+    misc_collection = MONGO_CLIENT[DB]['misc']
+
+    if (misc_collection.find_one({'_id': "need_update_TV"})):
+        print("!!!!!!!!!!!FOUNDED!!!!!!!!!!!!!!")
+        misc_collection.delete_one({'_id': "need_update_TV"})
+#        quit()
+
+
+#  загрузим список тикеров и дат, т.к. другие библиотеки poptimizer не работают
+        from pymongo import MongoClient
+        quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
+        sn_tickers = []   # список
+        sn_dates = []   # список
+        for quote in quotes_collection.find():
+            sn_tickers.append(quote['_id'])
+            for one_date in quote['data']['index']:
+                if one_date not in sn_dates:
+                    sn_dates.append(one_date)
+        sn_dates.sort()
+        print(sn_dates)
+
+
+        LoadFromTV('GLDRUB_TOM', "MOEX:GLDRUB_TOM", 1, sn_dates)
+        LoadFromTV('SLVRUB_TOM', "MOEX:SLVRUB_TOM", 1, sn_dates)
+        LoadFromTV('BTCRUB', "BINANCE:BTCRUB/10000", 10000, sn_dates)
+        LoadFromTV('ETHRUB', "BINANCE:ETHRUB/100", 100, sn_dates)
+#    quit()
+############################################################
+##  тут еще бы сделать проверку, что не загрузилось лишнего
+################################
+
+
+
+# Запуск различных заданий
+
+    import os
+
+    directory = '/home/sn/sn/poptimizer-master/auto/!work'
+    files = os.listdir(directory)
+    bashes = filter(lambda x: x.endswith('.sh'), files)
+
+    for bash in sorted(bashes):
+         self._logger.info(f'Running {directory}/{bash}')
+         os.system(f'{directory}/{bash} 2>&1 | tee {directory}/{bash}_out')
+#         os.system(f'{directory}/{bash} > {directory}/{bash}_out')
+         os.system(f'rm {directory}/{bash}')
+#         quit()
+
+
+###########
+
     hour = datetime.datetime.today().hour
 
     if config.START_EVOLVE_HOUR == config.STOP_EVOLVE_HOUR:

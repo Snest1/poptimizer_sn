@@ -1,0 +1,14 @@
+[Unit]
+Description=My test service
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/bin/bash '/home/sn/sn/poptimizer-master/service.sh'
+User=sn
+Type=forking
+ 
+[Install]
+WantedBy=multi-user.target
+Alias=poptimizer
