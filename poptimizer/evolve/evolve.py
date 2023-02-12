@@ -184,7 +184,7 @@ class Evolution:  # noqa: WPS214
                 prob = 1 - _time_delta(organism)
                 retry = stats.geom.rvs(prob)
                 dates = all_dates[-(max(organism.scores, self._tests - 1)  + retry): -organism.scores].tolist()
-                organism.retrain(self._tickers, dates[0], sn_comments = f"{organism.id}\t{dates[0]}"))
+                organism.retrain(self._tickers, dates[0], sn_comments = f"{organism.id}\t{dates[0]}")
                 sn_len = len(dates)
                 dates = reversed(dates)
             elif organism.scores:
@@ -248,7 +248,7 @@ class Evolution:  # noqa: WPS214
             )
 
             if upper < 0:
-                self._logger.error(f"!!!_                          Organizm:{organism.id}  Проблема: 08 Удаляю - {error}\n")
+                self._logger.error(f"!!!_                          Organizm:{org.id}  Проблема: 08 Удаляю - upper={upper} (< 0)\n")
                 org.die()
                 self._logger.info("Исключен из популяции...\n")
 
