@@ -1,73 +1,95 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.chrome.options import Options 
-
-from time import sleep
-
 import undetected_chromedriver
+import time
+import pandas as pd
 
-url = 'https://invest' + 'mint.ru/mdmg/'
+from selenium import webdriver
+### sudo snap install chromium
+### sudo snap refresh chromium
+### sudo snap refresh chromium --candidate
+
+def div_load_inet(ticker: str) -> str:
+    """Загружает страницу с дивидендами и прочей информацией из интернета"""
+    url = 'https://invest' + 'mint.ru/' + ticker + '/'
+
+    service_log_path = "chromedriver.log"
+    service_args = ['--verbose']
+
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("no-sandbox")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    #chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+
+    driver = undetected_chromedriver.Chrome(executable_path='chromedriver',
+            service_args=service_args,
+            service_log_path=service_log_path,
+            options=chrome_options)
+    driver.get(url)
+    content = driver.page_source
+    #/html/body/div[3]/div/div[2]/div[4]
+
+    driver.close()
+    driver.quit()
+    return content
 
 
-service_log_path = "chromedriver.log"
-service_args = ['--verbose']
+def div_load_cache(ticker: str) -> list[str] | None:
+    try:
+        with open("/home/sn/sn/poptimizer-master/auto/cache/" + time.strftime('%Y%m%d',
+                                                                             time.gmtime()) + "/" + ticker + '.html',
+                 'r') as file:
+            lines = [line.rstrip() for line in file]
+        file.close()
+        return lines
+    except:
+        print("No cache")
+        return None
+
+def div_save_cache(ticker: str, content: any) -> bool:
+    try:
+        file = open("/home/sn/sn/poptimizer-master/auto/cache/" + time.strftime('%Y%m%d',
+                                                                             time.gmtime()) + "/" + ticker + '.html',
+                 'w')
+        file.write(content)
+        file.close()
+        return True
+    except:
+        print("Error saving cache")
+        return False
 
 
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument("no-sandbox")
-chrome_options.add_argument("--disable-extensions")
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-dev-shm-usage")
-#chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-
-driver = undetected_chromedriver.Chrome(executable_path='chromedriver',
-        service_args=service_args,
-        service_log_path=service_log_path,
-        options=chrome_options)
-driver.get(url)
-content = driver.page_source
-print(content)
-
-#/html/body/div[3]/div/div[2]/div[4]
+ticker = 'agro'
+html = div_load_cache(ticker)
+if not html:
+#    global html
+    html = div_load_inet(ticker)
+    div_save_cache(ticker, html)
+    html = div_load_cache(ticker)
+#print(html)
 
 
-driver.close()
-driver.quit()
+from bs4 import BeautifulSoup          # https://python-scripts.com/beautifulsoup-parsing
+soup = BeautifulSoup('\n'.join(html), "lxml")
+#print(soup.prettify())
+div_history = soup.find('div', {'id': 'history'})
+#print(div_history.prettify())
+div_table = div_history.find('table')
+#print(str(div_table.prettify()))
+
+
+from poptimizer.data.adapters.gateways import invest_mint
+from poptimizer.data.adapters.html import description
+
+df1 = invest_mint.parser.get_df_from_html(str(div_table), 0, invest_mint.get_col_desc(ticker))
+df = description.reformat_df_with_cur(df1, ticker)
+print(df)
+
 quit()
 
 
 
-
-
-from bs4 import BeautifulSoup
-import requests
-#url = 'http://mignews.com/mobile'
-url = 'https://investmint.ru/mdmg/'
-page = requests.get(url)
-
-#Проверим подключение:
-print(page.status_code)
-
-new_news = []
-news = []
-
-#Самое время воспользоваться BeautifulSoup4 и скормить ему наш page, 
-#указав в кавычках как он нам поможет 'html.parcer':
-soup = BeautifulSoup(page.text, "html.parser")
-
-#Если попросить его показать, что он там сохранил:
-print(soup)
-
+html = div_load_inet(ticker)
+div_save_cache(ticker, html)
 quit()
 
-#Теперь воспользуемся функцией поиска в BeautifulSoup4:
-news = soup.findAll('a', class_='lenta')
-
-for news_item in news:
-    if news_item.find('span', class_='time2 time3') is not None:
-        new_news.append(news_item.text)
-
-print(f"{news_item =}")
