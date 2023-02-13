@@ -248,9 +248,9 @@ class Evolution:  # noqa: WPS214
             )
 
             if upper < 0:
-                self._logger.error(f"!!!_                          Organizm:{org.id}  Проблема: 08 Удаляю - upper={upper} (< 0)\n")
+#                self._logger.error(f"!!!_                          Organizm:{org.id}  Проблема: 08 Удаляю - upper={upper} (< 0)\n")
+                self._logger.info(f"Organizm: {org.id} Исключен из популяции (upper {metric} = {upper})...\n")
                 org.die()
-                self._logger.info("Исключен из популяции...\n")
 
                 return None
 

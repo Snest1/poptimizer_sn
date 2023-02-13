@@ -157,7 +157,7 @@ class Organism:  # noqa: WPS214
         parent2 = kwargs.get('par2', None)
         if parent1 == None or parent2 == None:
             parent1, parent2 = _get_parents()
-        LOGGER.info(f"parent1 = {parent1.id}, parent2 = {parent2.id})")
+        LOGGER.info(f"parent1 = {parent1.id}, parent2 = {parent2.id}")
 
         child_genotype = self.genotype.make_child(parent1.genotype, parent2.genotype, scale)
 
