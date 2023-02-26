@@ -127,6 +127,7 @@ stat_*
 /auto/!work*
 /auto/src/*/*.py_*
 /dump/source/*.*
+/auto/cache/
 
 *back
 *.toml

@@ -547,7 +547,7 @@ oper\t\
                 if (algo == 'simple_priority'):   # Алгоритм основываеся просто на приоритетах
                     cur_buy_priority = 999999     # Выбр по таблице приоритетов к покупке.
                     for sb in selected_buy:
-                        prior = buy_prior.get(sb, -1)
+                        prior = buy_prior.get(sb, 0)
                         if prior > 0 and cur_buy_priority > prior:
                             self._logger.info(f'Priority algo: {buy_index}(P2={rec.PRIORITY_2.loc[buy_index]:.5f}, W={rec.WEIGHT.loc[buy_index]:.5f})={cur_buy_priority} replace on {sb}(P2={rec.PRIORITY_2.loc[sb]:.5f}, W={rec.WEIGHT.loc[sb]:.5f})={prior}')
                             cur_buy_priority = prior

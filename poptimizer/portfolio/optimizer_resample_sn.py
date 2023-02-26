@@ -583,8 +583,8 @@ oper\t\
                         prior2 = rec.PRIORITY_2.loc[sb]
                         vol_cur = rec.VALUE.loc[sb]
 #                     v1                        v2               v4        v3
-# ( ( vol_cur/1000 * b_prior/1000 * vol_mult )  /  prior2  +   1 / (prior2 * vol_mult)  )
-                        v1 = vol_cur/1000 * b_prior/1000 * vol_mult
+# ( ( vol_cur/1000 * b_prior/1000 / vol_mult )  /  prior2  +   1 / (prior2 * vol_mult)  )
+                        v1 = vol_cur/1000 * b_prior/1000 / vol_mult
                         v2 = v1 / prior2
                         v3 = prior2 * vol_mult   # Эта и след нужны для сравнения между собой новых бумаг
                         v4 = 1 / v3
