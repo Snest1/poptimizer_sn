@@ -578,7 +578,7 @@ oper\t\
 
                     dic = {}
                     for sb in selected_buy:
-                        b_prior = buy_prior.get(sb, -1)
+                        b_prior = buy_prior.get(sb, 0)
                         vol_mult = buy_vol_mult.get(sb, 1)  # Если найден, то = 1
                         prior2 = rec.PRIORITY_2.loc[sb]
                         vol_cur = rec.VALUE.loc[sb]

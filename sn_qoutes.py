@@ -336,7 +336,7 @@ for quote in quotes_collection.find():
     for one_date in quote['data']['index']:
         if one_date not in sn_dates:
             sn_dates.append(one_date)
-sn_dates.sort()
+dates.sort()
 print(sn_dates)
 
 #LoadFromTV('GLDRUB_TOM', "MOEX:GLDRUB_TOM", 1, sn_dates)

@@ -91,6 +91,43 @@ class Evolution:  # noqa: WPS214
     def _tests(self) -> int:
         return population.count()
 
+    def sn_check_tv_update(self) -> None:
+        ### Если ранее былии загружены курсы MOEX, надо обновить остальные курсы  2023
+
+        from pymongo.collection import Collection
+        from poptimizer.store.database import DB, MONGO_CLIENT
+        misc_collection = MONGO_CLIENT[DB]['misc']
+
+        if (misc_collection.find_one({'_id': "need_update_TV"})):
+            print("!!!!!!!!!!!FOUNDED!!!!!!!!!!!!!!")
+            #        quit()
+
+            #  загрузим список тикеров и дат, т.к. другие библиотеки poptimizer не работают
+            from pymongo import MongoClient
+            quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
+            sn_tickers = []  # список
+            sn_dates = []  # список
+            for quote in quotes_collection.find():
+                if quote['_id'] == 'GAZP':
+                    sn_tickers.append(quote['_id'])
+                    for one_date in quote['data']['index']:
+                        if one_date not in sn_dates:
+                            sn_dates.append(one_date)
+            sn_dates.sort()
+            print(sn_dates)
+
+            LoadFromTV('GLDRUB_TOM', "MOEX:GLDRUB_TOM", 1, sn_dates)
+            LoadFromTV('SLVRUB_TOM', "MOEX:SLVRUB_TOM", 1, sn_dates)
+            LoadFromTV('BTCRUB', "BINANCE:BTCRUB/10000", 10000, sn_dates)
+            LoadFromTV('ETHRUB', "BINANCE:ETHRUB/100", 100, sn_dates)
+
+            misc_collection.delete_one({'_id': "need_update_TV"})
+
+    #    quit()
+    # ###########################################################
+    # #  тут еще бы сделать проверку, что не загрузилось лишнего
+    # ###############################
+
     def evolve(self) -> None:
         """Осуществляет эволюции.
 
@@ -105,6 +142,7 @@ class Evolution:  # noqa: WPS214
             step = self._step_setup(step)
 
             date = self._end.date()
+            self.sn_check_tv_update()  # Проверим, не надо ли сейчас обновить курсы с TV.
             self._logger.info(f"***{date}: Шаг эволюции — {step}***")
             population.print_stat()
 
@@ -177,6 +215,8 @@ class Evolution:  # noqa: WPS214
             return None
 
         all_dates = listing.all_history_date(self._tickers, end=self._end)
+        self.sn_check_tv_update()  # Проверим, не надо ли сейчас обновить курсы с TV.
+
         sn_len = 0
 
         try:
@@ -272,44 +312,44 @@ def _time_delta(org):
 
 def _check_time_range(self) -> bool:
 
-### Если ранее былии загружены курсы MOEX, надо обновить остальные курсы  2023
-
-    from pymongo.collection import Collection
-    from poptimizer.store.database import DB, MONGO_CLIENT
-    misc_collection = MONGO_CLIENT[DB]['misc']
-
-    if (misc_collection.find_one({'_id': "need_update_TV"})):
-        print("!!!!!!!!!!!FOUNDED!!!!!!!!!!!!!!")
-#        quit()
-
-
-#  загрузим список тикеров и дат, т.к. другие библиотеки poptimizer не работают
-        from pymongo import MongoClient
-        quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
-        sn_tickers = []   # список
-        sn_dates = []   # список
-        for quote in quotes_collection.find():
-            if quote['_id'] == 'GAZP':
-                sn_tickers.append(quote['_id'])
-                for one_date in quote['data']['index']:
-                    if one_date not in sn_dates:
-                        sn_dates.append(one_date)
-        sn_dates.sort()
-        print(sn_dates)
-
-
-        LoadFromTV('GLDRUB_TOM', "MOEX:GLDRUB_TOM", 1, sn_dates)
-        LoadFromTV('SLVRUB_TOM', "MOEX:SLVRUB_TOM", 1, sn_dates)
-        LoadFromTV('BTCRUB', "BINANCE:BTCRUB/10000", 10000, sn_dates)
-        LoadFromTV('ETHRUB', "BINANCE:ETHRUB/100", 100, sn_dates)
-
-        misc_collection.delete_one({'_id': "need_update_TV"})
-
-#    quit()
-############################################################
-##  тут еще бы сделать проверку, что не загрузилось лишнего
-################################
-
+# ### Если ранее былии загружены курсы MOEX, надо обновить остальные курсы  2023
+#
+#     from pymongo.collection import Collection
+#     from poptimizer.store.database import DB, MONGO_CLIENT
+#     misc_collection = MONGO_CLIENT[DB]['misc']
+#
+#     if (misc_collection.find_one({'_id': "need_update_TV"})):
+#         print("!!!!!!!!!!!FOUNDED!!!!!!!!!!!!!!")
+# #        quit()
+#
+#
+# #  загрузим список тикеров и дат, т.к. другие библиотеки poptimizer не работают
+#         from pymongo import MongoClient
+#         quotes_collection = MongoClient('localhost', 27017)['data']['quotes']
+#         sn_tickers = []   # список
+#         sn_dates = []   # список
+#         for quote in quotes_collection.find():
+#             if quote['_id'] == 'GAZP':
+#                 sn_tickers.append(quote['_id'])
+#                 for one_date in quote['data']['index']:
+#                     if one_date not in sn_dates:
+#                         sn_dates.append(one_date)
+#         sn_dates.sort()
+#         print(sn_dates)
+#
+#
+#         LoadFromTV('GLDRUB_TOM', "MOEX:GLDRUB_TOM", 1, sn_dates)
+#         LoadFromTV('SLVRUB_TOM', "MOEX:SLVRUB_TOM", 1, sn_dates)
+#         LoadFromTV('BTCRUB', "BINANCE:BTCRUB/10000", 10000, sn_dates)
+#         LoadFromTV('ETHRUB', "BINANCE:ETHRUB/100", 100, sn_dates)
+#
+#         misc_collection.delete_one({'_id': "need_update_TV"})
+#
+# #    quit()
+# ############################################################
+# ##  тут еще бы сделать проверку, что не загрузилось лишнего
+# ################################
+#
 
 
 # Запуск различных заданий
